@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it"><!-- Palmare - Versione 1.0 - Settembre 2023 -->
+<html lang="it"><!-- Palmare - Versione 1.1 - Ottobre 2023 -->
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta charset="utf-8" />
@@ -14,7 +14,7 @@
 </head>
 <body style="height: 100vh;">
 <?php
-include '../pannello/connect.php';
+include '../connect.php';
 $conn = pg_connect((filter_var($server, FILTER_VALIDATE_IP) ? "hostaddr" : "host") . "=$server port=$port dbname=$dbname user=$user password=$password connect_timeout=5") or die('Connessione al database non riuscita.');
 if (pg_connection_status($conn) == PGSQL_CONNECTION_BAD) {
 	echo 'Errore di connessione al database.';
@@ -38,7 +38,7 @@ if (isset($_COOKIE['cameriere'])) {
 		<nav class="fixed-top navbar navbar-expand-lg navbar-dark bg-success" style="transition: 0.3s;">
 			<div class="container-lg">
 				<span class="navbar-brand">
-					<a href="#" class="navbar-brand" onclick="preparalista();"><i class="bi bi-compass-fill"></i> Palmare sagra&emsp;</a><span id="attesa"></span> <!--i class="bi bi-<?php echo (str_ends_with($server, '1') ? 1 : 2); ?>-circle"></i-->
+					<a href="#" class="navbar-brand" onclick="preparalista();"><i class="bi bi-compass-fill"></i> Palmare sagra&emsp;</a><span id="attesa"></span>&nbsp;<span id="errore" onclick="mostraerrore();"></span> <!--i class="bi bi-<?php echo (str_ends_with($server, '1') ? 1 : 2); ?>-circle"></i-->
 				</span>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>

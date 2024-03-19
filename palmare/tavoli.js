@@ -1,23 +1,16 @@
 var ordini = [];
-var salvati = [];
+var ordinic = [];
 var fatti = [];
 var id = null;
 var t;
-var inviabili = true;
+var msg = "";
 
 function aggiornastato() {
-	if (!inviabili)
-		$('#attesa').html('<i class="bi bi-hourglass-split"></i>');
-	else if (salvati.length > 0)
-		$('#attesa').html('<i class="bi bi-upload"></i>');
-	else
-		$('#attesa').html('');
+	//$('#attesa').html(ordinic.length > 0 ? '<i class="bi bi-upload"></i>' : '');
+	$('#errore').html(msg != '' ? '<i class="bi bi-exclamation-triangle-fill text-danger"></i>' : '');
 }
 
 function preparalista() {
-	inviabili = true;
-	setTimeout(invio, 1);
-	
 	coloremenu('bg-success');
 	$('#titolo').html('<h3><button class="btn btn-success" onclick="lista();"><i class="bi bi-arrow-clockwise text-lead"></i></button>&nbsp;Ordini da raccogliere</h3>');
 	lista();
@@ -30,13 +23,11 @@ function lista() {
 		$('#corpo').html('');
 		try {
 			ordini = [];
+			//Ricostruzione degli ordini già salvati a partire dai cookie
+			ordiniCookie();
+			//Preparazione della lista con gli ordini non ancora associati
 			$.each(json, function(i, res) {
-				let j = 0;
-				for (; j < salvati.length; j++) {
-					if (salvati[j].id == res.id)
-						break;
-				}
-				if (j == salvati.length)
+				if (ordinic[res.id] == null)
 					ordini[res.id] = res;
 			});
 		} catch (err) {
@@ -70,13 +61,6 @@ function ordine(num) {
 	</div></div>');
 }
 
-function tav(stringa) {
-	if (!stringa)
-		$('#tavolo').val('');
-	else
-		$('#tavolo').val($('#tavolo').val() + stringa);
-}
-
 function salvatav() {
 	t = $('#tavolo').val();
 	if (t.length > 0) {
@@ -100,43 +84,64 @@ function annulla() {
 }
 
 function conferma() {
-	var attuale = ordini[id];
-	attuale.tavolo = t;
-	salvati.push(attuale);
+	// 0_id_tavolo_progressivo_ora_cliente
+	setCookie('action' + Date.now(), '0_' + id + '_' + t + '_' + ordini[id].progressivo + '_' + ordini[id].ora + '_' + ordini[id].cliente);
 	ordini[id] = null;
 	preparalista();
 }
 
 function invio() {
 	aggiornastato();
-	if (!inviabili)
-		return;
-	for (let i = 0; i < salvati.length; i++) {
-		$.ajax({
-			url: "ajax.php?a=salvatav&id=" + salvati[0].id + "&tavolo=" + salvati[0].tavolo,
-			success: function(res) {
-				if (res == '1') {
-					fatti[salvati[0].id] = salvati.shift();
-				} else {
-					dialog('Errore', 'Errore nel salvataggio dei dati: ' + res);
-				}
-			},
-			error: function(xhr, status, error) { // Server non raggiungibile
-				dialog('Errore', 'Errore nell\'invio dei dati: ' + error);
-			},
-			timeout: 2000
-		});
-		if (!inviabili)
-			return;
+	$.ajax({
+		url: "ajax.php?a=invio",
+		success: function(res) {
+			msg = '';
+			if (res != '1') {
+				msg = 'Errore nel salvataggio dei dati: ' + res;
+				dialog('Errore', msg);
+			}
+			aggiornastato();
+		},
+		error: function(xhr, status, error) { // Server non raggiungibile
+			msg = 'Errore nell\'invio dei dati: ' + error;
+		},
+		timeout: 2000
+	});
+}
+setInterval(invio, 2000);
+
+function ordiniCookie() {
+	ordinic = [];
+	let sorting = [];
+	let cookies = document.cookie.split("; ");
+	let singolo, singolo2;
+	cookies.sort();
+	for (let i = 0; i < cookies.length; i++) {
+		singolo = cookies[i].split("=");
+		if (singolo[0].startsWith("action")) {
+			singolo2 = singolo.split("_");
+			if (singolo2[0] == '0') {
+				ordinic[singolo2[1]] = {"id": singolo2[1],
+									"progressivo": singolo2[3],
+									"tavolo": singolo2[2],
+									"ora": singolo2[4],
+									"cliente": singolo2[5]};
+				sorting.push(singolo2[1]);
+			} else
+				ordinic[singolo2[1]] = null;
+		}
 	}
-	aggiornastato();
-	if (salvati.length > 0) {
-		setTimeout(invio, 2000);
+	return sorting;
+}
+
+function mostraerrore() {
+	if (msg != '') {
+		dialog('Errore', msg);
 	}
 }
 
-function testataordine(ordine, stile, azione = "preparalista();") {
-	$('#titolo').html('<div class="row"><div class="col-auto"><h3 class="m-0"><button class="btn btn-' + stile + '" onclick="' + azione + '"><i class="bi bi-caret-left-fill"></i></button>&nbsp;Ordine <strong>' + ordine.progressivo + '</strong></h3></div><div class="col" style="text-align: right;"><small>ID ' + ordine.id + ' - ' + ordine.ora.substr(0, 5) + (ordine.data != null ? '<br>' + ordine.data : '') + '</small></div></div>');
+function testataordine(ord, stile, azione = "preparalista();") {
+	$('#titolo').html('<div class="row"><div class="col-auto"><h3 class="m-0"><button class="btn btn-' + stile + '" onclick="' + azione + '"><i class="bi bi-caret-left-fill"></i></button>&nbsp;Ordine <strong>' + ord.progressivo + '</strong></h3></div><div class="col" style="text-align: right;"><small>ID ' + ord.id + ' - ' + ord.ora.substr(0, 5) + (ord.data != null ? '<br>' + ord.data : '') + '</small></div></div>');
 }
 
 let tastiera = '<div class="row"><div class="col" style="padding: 2px;">\
@@ -183,3 +188,10 @@ let tastiera = '<div class="row"><div class="col" style="padding: 2px;">\
 			<div class="row"><div class="col" style="padding: 2px;">\
 				<button class="btn btn-success btn-lg w-100" onclick="salvatav();"><i class="bi bi-check-circle-fill"></i>&emsp;Ok</button>\
 			</div></div>';
+
+function tav(stringa) {
+	if (!stringa)
+		$('#tavolo').val('');
+	else
+		$('#tavolo').val($('#tavolo').val() + stringa);
+}

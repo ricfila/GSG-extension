@@ -8,7 +8,6 @@ var tipocerca = 0;
 var trovati = [];
 
 function cercaordine() {
-	inviabili = false;
 	coloremenu('bg-info');
 	$('#titolo').html('<h3 class="m-0"><button class="btn btn-info" onclick="preparalista();"><i class="bi bi-caret-left-fill"></i></button> Cerca un ordine');
 	$('#corpo').html('<div class="btn-group-vertical w-100"><button class="btn btn-lg btn-outline-info" onclick="dialogcerca(1);"><i class="bi bi-123"></i> Per numero</button>\
@@ -45,35 +44,12 @@ function dialogcerca(tipo) {
 	trovati = [];
 }
 
+let oggetti = ['num', 'id', 'tav', 'nome'];
 function cerca() {
-	let oggetto = '';
-	switch (tipocerca) {
-		case 1:
-			oggetto = 'num';
-			break;
-		case 2:
-			oggetto = 'id';
-			break;
-		case 3:
-			oggetto = 'tav';
-			break;
-		case 4:
-			oggetto = 'nome';
-			break;
-			break;
-		default:
-			break;
-	}
-	$.getJSON("ajax.php?a=cerca&" + oggetto + "=" + $('#inputcerca').val())
+	$.getJSON("ajax.php?a=cerca&" + oggetti[tipocerca - 1] + "=" + $('#inputcerca').val())
 	.done(function(json) {
 		try {
-			if (tipocerca > 2) {
-				$.each(json, function(i, res) {
-					trovati.push(res);
-				});
-				rescerca();
-				modcerca.hide();
-			} else {
+			if (tipocerca == 2) {
 				if (json.length < 1) {
 					$('#rescerca').html('<br>Ordine non trovato.');
 				} else {
@@ -81,6 +57,12 @@ function cerca() {
 					apriordine(0, 'trovati');
 					modcerca.hide();
 				}
+			} else {
+				$.each(json, function(i, res) {
+					trovati.push(res);
+				});
+				rescerca();
+				modcerca.hide();
 			}
 		} catch (err) {
 			$('#rescerca').html('<span class="text-danger"><strong>Errore nell\'elaborazione della richiesta:</strong></span>' + err);
@@ -92,7 +74,7 @@ function cerca() {
 }
 
 function rescerca() {
-	$('#titolo').html('<h3 class="m-0"><button class="btn btn-info" onclick="cercaordine();"><i class="bi bi-caret-left-fill"></i></button> Ordini' + (tipocerca == 3 ? ' del tavolo ' + $('#inputcerca').val() : ' associati al nome ' + $('#inputcerca').val()));
+	$('#titolo').html('<h3 class="m-0"><button class="btn btn-info" onclick="cercaordine();"><i class="bi bi-caret-left-fill"></i></button> Ordini ' + (tipocerca == 3 ? 'del tavolo ' : (tipocerca == 4 ? 'associati al nome ' : 'numerati ')) + $('#inputcerca').val());
 	if (trovati.length == 0) {
 		$('#corpo').html('Nessun ordine trovato.');
 	} else {

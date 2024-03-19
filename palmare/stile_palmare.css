@@ -1,0 +1,37 @@
+
+.ordinesala {
+	animation: ordineSalaIn 0.3s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease;
+	opacity: 0;
+}
+@keyframes ordineSalaIn {
+	0% {transform: translateX(-80%); opacity: 1;}
+	100% {transform: translateX(0px); opacity: 1;}
+}
+
+@keyframes tastieraTav {
+	0% {transform: translateX(80%); opacity: 0;}
+	100% {transform: translateX(0px); opacity: 1;}
+}
+
+.restringi {
+	animation: tastieraOut 0.2s;
+}
+@keyframes tastieraOut {
+	0% {transform: rotateY(0deg); }
+	100% {transform: rotateY(90deg); }
+}
+.allarga {
+	animation: tastieraIn 0.2s;
+	animation-fill-mode: forwards;
+}
+@keyframes tastieraIn {
+	0% {transform: rotateY(-90deg); }
+	100% {transform: rotateY(0deg); }
+}
+
+.nav-item {
+	margin-top: 20px;
+	aborder-bottom: 1px #FFF solid;
+}

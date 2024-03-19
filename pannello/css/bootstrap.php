@@ -1,0 +1,50 @@
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8" />
+<!--link href="custom.css" rel="stylesheet" /-->
+<link href="bootstrap-5.0.2-dist/css/bootstrap.css" rel="stylesheet" />
+<link href="bootstrap-5.0.2-dist/css/bootstrap-icons.css" rel="stylesheet" />
+<script src="bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/jquery-3.6.0.min.js"></script>
+<!-- Info compilazione bootstrap:
+Il file sorgente da modificare per sovrascrivere le variabili è "bootstrap-5.0.2/scss/bootstrap.scss"
+Compilare lanciando lo script "compila.bat", che sovrascrive il file "bootstrap-5.0.2/dist/css/bootstrap.css" già importato in questa pagina.
+sass.bat e la cartella src servono al compilatore, non vanno rimossi o spostati. -->
+<link rel="stylesheet" href="css/stile.css" />
+
+<?php
+require "connect.php";
+$pagina = str_ends_with($_SERVER['PHP_SELF'], 'index.php') ? 'pannello' : 'ausilio';
+$lido = str_ends_with($server, '1') ? 1 : 2;
+
+function menuturno() {
+	global $pagina, $lido;
+	echo '<li class="nav-item">
+		<a class="nav-link" href="#" id="turno" data-bs-toggle="modal" data-bs-target="#modalturno"><i class="bi bi-alarm"></i> Seleziona il turno</a>
+	</li>';
+}
+
+function navdx() {
+	global $server, $pagina, $lido;
+	echo '<ul class="navbar-nav">
+		<li class="nav-item dropdown">
+			<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><i class="bi bi-link-45deg"></i> Collegamenti</a>
+			<ul class="dropdown-menu">
+				<li><a class="dropdown-item" id="linkpietanze" href="http://' . $server . '/" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Pietanze da servire</a></li>
+				<li><a class="dropdown-item" href="' . ($pagina == 'pannello' ? 'casse.php' : 'index.php') . '">' . ($pagina == 'pannello' ? '<i class="bi bi-heart"></i> Ausilio alle casse' : '<i class="bi bi-star"></i> Pannello evasione comande') . '</a></li>
+				<li><hr class="dropdown-divider"></li>
+				<li><a class="dropdown-item" href="http://sagra0' . ($lido == 1 ? 2 : 1) . '/pannello/' . ($pagina == 'pannello' ? '' : 'casse.php') . '"><i class="bi bi-' . ($lido == 1 ? 2 : 1) . '-circle"></i> ' . ($pagina == 'pannello' ? 'Pannello' : 'Ausilio') . ' su Sagra0' . ($lido == 1 ? 2 : 1) . '</a></li>
+			</ul>
+		</li>
+		<li class="nav-item">
+			<a class="nav-link" href="#" onclick="toggleId();"><span id="iconid">' . (isset($_COOKIE['id']) && $_COOKIE['id'] == '1' ? '<i class="bi bi-check-square-fill"></i>' : '<i class="bi bi-square"></i>') . '</span> ID</a>
+		</li>
+	</ul>';
+}
+
+function icona() {
+	global $pagina;
+	return '<link rel="icon" type="image/png" href="media/' . ($pagina == 'pannello' ? 'star' : 'heart') . '-fill.png" />';
+}
+
+?>

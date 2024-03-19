@@ -1,0 +1,257 @@
+<?php
+if (!isset($_GET['a']))
+	exit;
+if (!isset($_COOKIE['logincasse']))
+	exit;
+
+require "../connect.php";
+
+$conn = pg_connect((filter_var($server, FILTER_VALIDATE_IP) ? "hostaddr" : "host") . "=$server port=$port dbname=$dbname user=$user password=$password connect_timeout=5") or die('Connessione al database non riuscita.');
+if (pg_connection_status($conn) == PGSQL_CONNECTION_BAD) {
+	echo 'Errore di connessione al database.';
+}
+
+include "function.php";
+
+foreach ($_GET as $k => $v) {
+	if (!is_array($v))
+		$$k = pg_escape_string($conn, $v);
+	else
+		$$k = $v;
+}
+setlocale(LC_ALL, 'it_IT');
+
+switch ($a) {
+	case 'ultimiordini':
+		$res = pg_query($conn, "select * from ordini where " . infoturno() . " order by cassa, ora desc;");
+		if (pg_num_rows($res) > 0) {
+			echo "[\n";
+			$cassa = null;
+			$i = $evasi = 0;
+			while ($row = pg_fetch_assoc($res)) {
+				if ($row['cassa'] != $cassa) {
+					if ($cassa != null) {
+						echo "\t\t],\n";
+						echo "\t\t\"totale\": " . $i . ",\n";
+						echo "\t\t\"evasi\": " . $evasi . "\n";
+						echo "\t},\n";
+					}
+					$cassa = $row['cassa'];
+					echo "\t{\n";
+					echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",";
+					echo "\t\t\"ordini\": [\n";
+					$i = 0;
+					$evasi = 0;
+				} else {
+					echo ",\n";
+				}
+				echo "\t\t\t{\n";
+				echo "\t\t\t\t\"id\": " . $row['id'] . ",\n";
+				echo "\t\t\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
+				echo "\t\t\t\t\"ora\": \"" . $row['ora'] . "\",\n";
+				echo "\t\t\t\t\"cliente\": \"" . $row['cliente'] . "\",\n";
+				echo "\t\t\t\t\"esportazione\": " . ($row['esportazione'] == 't' ? 'true' : 'false') . ",\n";
+				$evaso = ordineevaso($row);
+				echo "\t\t\t\t\"evaso\": " . ($evaso ? "true" : "false") . "\n";
+				if ($evaso)
+					$evasi++;
+				echo "\t\t\t}";
+				$i++;
+			}
+			echo "\t\t],\n";
+			echo "\t\t\"totale\": " . $i . ",\n";
+			echo "\t\t\"evasi\": " . $evasi . "\n";
+			echo "\t}\n";
+			echo "]";
+		} else
+			echo "[]";
+		break;
+	case 'righecomanda':
+		if ($identificatocon == 'ID')
+			$id = $num;
+		else {
+			$res = pg_query($conn, "select id from ordini where progressivo = $num and " . infoturno() . ";");
+			if (pg_num_rows($res) == 1) {
+				$id = pg_fetch_assoc($res)['id'];
+			} else {
+				echo 'Ordine non trovato. Assicurarsi che sia stato emesso in questo turno.';
+				break;
+			}
+		}
+		
+		$res = pg_query($conn, "select * from ordini where id = $id;");
+		if (pg_num_rows($res) != 1) {
+			echo 'Ordine inesistente';
+			break;
+		}
+		$giorni = array('dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab');
+		$mesi = array('gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic');
+		
+		$row = pg_fetch_assoc($res);
+		$datacomanda = date_create($row['data']);
+		echo "[\n";
+		echo "\t{\n";
+		echo "\t\t\"tipo\": \"ordine\",\n";
+		echo "\t\t\"id\": " . $row['id'] . ",\n";
+		echo "\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
+		echo "\t\t\"tavolo\": \"" . $row['numeroTavolo'] . "\",\n";
+		echo "\t\t\"data\": \"" . $giorni[date_format($datacomanda, 'w')] . ' ' . date_format($datacomanda, 'j') . ' ' . $mesi[date_format($datacomanda, 'n') - 1] . ' ' . date_format($datacomanda, 'Y') . "\",\n";
+		echo "\t\t\"ora\": \"" . $row['ora'] . "\",\n";
+		echo "\t\t\"cliente\": \"" . $row['cliente'] . "\",\n";
+		echo "\t\t\"coperti\": \"" . $row['coperti'] . "\",\n";
+		echo "\t\t\"esportazione\": " . ($row['esportazione'] == 't' ? 'true' : 'false') . ",\n";
+		echo "\t\t\"totalePagato\": " . $row['totalePagato'] . ",\n";
+		echo "\t\t\"resto\": " . $row['resto'] . ",\n";
+		echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",\n";
+		echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\",\n";
+		echo "\t\t\"note\": \"" . $row['note'] . "\",\n";
+		echo "\t\t\"questoturno\": " . ($identificatocon == 'ID' ? (pg_num_rows(pg_query($conn, "select * from ordini where id = " . $row['id'] . " and " . infoturno() . ";")) == 1 ? "true" : "false") : "true") . ",\n";
+		$res = pg_query($conn, 'select * from tipo_pagamenti;');
+		echo "\t\t\"pagamenti\": [\n";
+		$i = 0;
+		while ($row = pg_fetch_assoc($res)) {
+			echo "\t\t\t\"" . $row['tipo_pagamento'] . "\"" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			$i++;
+		}
+		echo "\t\t]\n";
+		echo "\t}";
+		
+		$res = pg_query($conn, "select * from righe join righe_articoli on righe.id = righe_articoli.id_riga where id_ordine = $id order by righe.id;");
+		while ($row = pg_fetch_assoc($res)) {
+			echo ",\n";
+			echo "\t{\n";
+			echo "\t\t\"tipo\": \"" . $row['type'] . "\",\n";
+			echo "\t\t\"id\": " . $row['id_riga'] . ",\n";
+			echo "\t\t\"quantita\": " . $row['quantita'] . ",\n";
+			echo "\t\t\"descrizione\": \"" . $row['descrizione'] . "\",\n";
+			echo "\t\t\"prezzo_unitario\": " . $row['prezzo'] . ",\n";
+			echo "\t\t\"tipologia\": \"" . $row['desc_tipologia'] . "\",\n";
+			echo "\t\t\"note\": \"" . $row['note'] . "\"\n";
+			echo "\t}";
+		}
+		echo "\n";
+		echo "]";
+		break;
+	case 'salvaordine':
+		if (!pg_query($conn, "BEGIN")) {
+			echo 'Transazione non avviata.';
+		} else {
+			$ok = pg_query($conn, "update ordini set \"numeroTavolo\" = '$tavolo', cliente = '$cliente', coperti = " . (empty($coperti) ? "null" : $coperti) . ", esportazione = $esportazione, \"totalePagato\" = $totale, resto = 0, cassa = '$cassa', tipo_pagamento = '$tipo_pagamento' where id = $id;");
+			if (isset($righe)) {
+				$righemod = count($righe);
+				foreach ($righe as $idriga => $qta) {
+					$idrigaarticolo = pg_fetch_assoc(pg_query($conn, "select id from righe_articoli where id_riga = $idriga;"))['id'];
+					if ($qta == 0) {
+						$ok = $ok && pg_query($conn, "delete from righe_ingredienti where id_riga_articolo = $idrigaarticolo;");
+						$ok = $ok && pg_query($conn, "delete from righe_articoli where id_riga = $idriga;");
+						$ok = $ok && pg_query($conn, "delete from righe where id = $idriga;");
+					} else {
+						$qtavecchia = pg_fetch_assoc(pg_query($conn, "select quantita from righe where id = $idriga;"))['quantita'];
+						$ok = $ok && pg_query($conn, "update righe_ingredienti set quantita = (righe_ingredienti.quantita * $qta / $qtavecchia) where id_riga_articolo = $idrigaarticolo;");
+						$ok = $ok && pg_query($conn, "update righe set quantita = $qta where id = $idriga;");
+					}
+				}
+			} else
+				$righemod = 0;
+			if (isset($righenote)) {
+				foreach ($righenote as $idriga => $nota) {
+					if ($idriga == 'noteordine') {
+						$ok = $ok && pg_query($conn, "update ordini set note = '" . pg_escape_string($conn, $nota) . "' where id = $id;");
+					} else {
+						$ok = $ok && pg_query($conn, "update righe_articoli set note = '" . pg_escape_string($conn, $nota) . "' where id_riga = $idriga;");
+					}
+				}
+			}
+			$ok = $ok && pg_query($conn, "insert into modifiche (id_ordine, ora, agente, differenza, righeModificate, cassaVecchia, cassaNuova) values ($id, LOCALTIME, '" . $_SERVER['REMOTE_ADDR'] . "', " . ($totale - $totalevecchio) . ", $righemod, '$cassavecchia', '$cassa');");
+			chiudiTransazione($conn, $ok);
+		}
+		break;
+	case 'ingredienti':
+		$ore = (int)($minuti / 60);
+		$minuti = (int)($minuti % 60);
+		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, sum(righe_ingredienti.quantita / ingredienti.prezzo) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, ingredienti.prezzo as prezzo
+		FROM righe_ingredienti
+		JOIN righe_articoli ON righe_ingredienti.id_riga_articolo = righe_articoli.id
+		JOIN righe ON righe_articoli.id_riga = righe.id
+		JOIN ordini ON righe.id_ordine = ordini.id
+		JOIN ingredienti ON righe_ingredienti.descrizionebreve = ingredienti.descrizionebreve
+		WHERE " . infoturno() . " and ordini.ora > LOCALTIME - '$ore:$minuti' and (
+		CASE (CASE WHEN (CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END) = 'cucina' THEN ordini.stato_cucina ELSE ordini.stato_bar END)
+			WHEN 'evaso' THEN 0 ELSE 1
+		END) = 1
+		GROUP BY righe_ingredienti.descrizionebreve, righe_articoli.copia_cucina, ingredienti.prezzo;");
+		echo "[";
+		$inizio = true;
+		while ($row = pg_fetch_assoc($res)) {
+			if (!$inizio)
+				echo ", ";
+			else
+				$inizio = false;
+			echo "{\"descrizione\": \"" . $row['descrizionebreve'] . "\",";
+			echo "\"qta\": " . $row['qta'] . ",";
+			echo "\"copia\": \"" . $row['copia'] . "\",";
+			echo "\"comande\": " . $row['comande'] . ",";
+			echo "\"prezzo\": " . $row['prezzo'] . "}";
+		}
+		echo "]";
+		break;
+	case 'statisticheristrette':
+		$ristrette = statistiche($questoturno, true);
+		echo '<small><i class="bi bi-droplet"></i> Bar: ' . (isset($ristrette['bar']['media']) && $ristrette['bar']['media'] != null ? round($ristrette['bar']['media']) . ' minuti, al massimo ' . round($ristrette['bar']['massimo']) . ' minuti' : 'nessuna comanda evasa') . '<br>';
+		echo '<i class="bi bi-flag"></i> Cucina: ' . (isset($ristrette['cucina']['media']) && $ristrette['cucina']['media'] != null ? round($ristrette['cucina']['media']) . ' minuti, al massimo ' . round($ristrette['cucina']['massimo']) . ' minuti' : 'nessuna comanda evasa') . '</small>';
+		break;
+	case 'sequenze':
+		$res = pg_query($conn, "SELECT fixsequences();");
+		if ($res != false) {
+			echo pg_fetch_assoc($res)['fixsequences'] . '<br>';
+		} else
+			echo '<span class="text-danger">Richiesta fallita per un motivo sicuramente preoccupante</span>';
+		
+		break;
+	case 'ripristinagiacenze':
+		if (!pg_query($conn, "BEGIN;")) {
+			echo 'Transazione non avviata.';
+		} else {
+			$ok = true;
+			
+			$res = pg_query($conn, "UPDATE articoli SET id_giacenza = null;");
+			$ok = $ok && righeAfferite($res);
+			
+			$res = pg_query($conn, "UPDATE ingredienti SET id_giacenza = null;");
+			$ok = $ok && righeAfferite($res);
+			
+			$res = pg_query($conn, "DELETE FROM giacenze;");
+			$ok = $ok && righeAfferite($res);
+			
+			chiudiTransazione($conn, $ok, true);
+		}
+		break;
+	case 'svuotaevasioni':
+		$res = pg_query($conn, "DELETE FROM evasioni;");
+		if (!righeAfferite($res))
+			echo '<span class="text-danger">Qualcosa è andato storto</span>';
+		
+		break;
+	case 'ordinaarticoli':
+		if (!pg_query($conn, "BEGIN;")) {
+			echo 'Transazione non avviata.';
+		} else {
+			$ok = true;
+			$res = pg_query($conn, "SELECT articoli.id as id, tipologie.posizione as posizione FROM articoli JOIN tipologie ON articoli.id_tipologia = tipologie.id ORDER BY tipologie.posizione" . (!empty($order) && $order != null ? ", articoli.$order" : "") . ";");
+			$ok = $ok && righeAfferite($res);
+			
+			$i = 1;
+			while ($row = pg_fetch_assoc($res)) {
+				$ok = $ok && pg_query($conn, "UPDATE articoli SET posizione = $i WHERE id = " . $row['id'] . ";");
+				$i++;
+			}
+			chiudiTransazione($conn, $ok, true);
+		}
+		break;
+	default:
+		break;
+}
+
+pg_close($conn);
+
+?>

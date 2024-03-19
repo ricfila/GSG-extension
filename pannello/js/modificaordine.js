@@ -8,6 +8,10 @@ $('.nav-pills a[data-bs-target="#tabmodificaordine"]').on('show.bs.tab', functio
 var totalevecchio = 0;
 var totalenuovo = 0;
 var cassaVecchia = "";
+var omaggio = false;
+var omaggio2 = false;
+var sconti = [];
+var scontiapp = [];
 function apriordine() {
 	$('#modificaordine').html('<div class="spinner-border"></div> Caricamento dell\'ordine...').show();
 	var num = $('#numordine').val();
@@ -15,6 +19,7 @@ function apriordine() {
 	.done(function(json) {
 		var out = '';
 		$('#modificaordine').html('');
+		scontiapp = [];
 		try {
 			var tipologia = null;
 			var totale = 0;
@@ -22,7 +27,11 @@ function apriordine() {
 				if (res.tipo == 'ordine') {
 					out = '<div class="row">';
 					out += '<div class="col-1 text-center"><small>Ordine</small><br><span class="lead" id="progressivo">' + res.progressivo + '</div>';
-					out += '<div class="col"><small><span' + (!res.questoturno ? ' class="bg-danger text-white"' : '') + '>' + res.data + ', ' + res.ora.substring(0, 5) + '</span> - ';
+					out += '<div class="col">';
+					
+					// Prima riga
+					out += '<div class="row"><div class="col-auto">';
+					out += '<small><span' + (!res.questoturno ? ' class="bg-danger text-white"' : '') + '>' + res.data + ', ' + res.ora.substring(0, 5) + '</span> - ';
 					var casse = ['Cassa1', 'Cassa2', 'Cassa3'];
 					out += '<select id="cassa" class="form-select form-select-sm d-inline" style="width: 100px; padding-right: 2rem;">';
 					for (var i = 0; i < casse.length; i++) {
@@ -35,36 +44,56 @@ function apriordine() {
 					for (var i = 0; i < res.pagamenti.length; i++) {
 						out += '<option value="' + res.pagamenti[i] + '"' + (res.tipo_pagamento == res.pagamenti[i] ? ' selected' : '') + '>' + res.pagamenti[i] + '</option>';
 					}
-					out += '</select></small><br>';
+					out += '</select></small></div>';
+					out += '<div class="col my-auto"><small><div class="form-check" onchange="menu_omaggio();"><input class="form-check-input" type="checkbox" value="" id="omaggio"' + (res.menu_omaggio ? ' checked=""' : '') + '><label class="form-check-label" for="omaggio">Omaggio</label></div></small></div></div>';
+					omaggio = omaggio2 = res.menu_omaggio;
+					
+					// Seconda riga
+					out += '<div class="row"><div class="col">';
 					out += '<span class="rigacomanda" style="cursor: pointer;" onclick="toggleCoperti();" id="desccoperti">' + (res.esportazione ? 'ASPORTO' : 'COPERTI') + '</span><span id="inputcoperti"' + (res.esportazione ? ' style="display: none;"' : '') + '>: <input class="form-control form-control-sm" id="valcoperti" type="number" min="0" style="display: inline; width: 70px;" value="' + res.coperti + '"></span>';
 					out += '&emsp;Cliente: <input id="cliente" class="form-control form-control-sm" type="text" maxlength="254" style="display: inline; width: 150px;" value="' + res.cliente + '">';
 					out += '&emsp;Tavolo: <input id="tavolo" class="form-control form-control-sm" type="text" min="0" style="display: inline; width: 70px;" value="' + res.tavolo + '">';
 					out += '<span id="tagaddnoteordine"' + (res.note != '' ? ' class="d-none"' : '') + '>&emsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagnoteordine\').removeClass(\'d-none\'); $(\'#tagaddnoteordine\').addClass(\'d-none\'); $(\'#noteordine\').addClass(\'riganote\');"><i class="bi bi-plus-lg"></i> Note</button></span>';
 					out += '<span id="tagnoteordine"' + (res.note == '' ? ' class="d-none"' : '') + '><br>→&nbsp;<input class="form-control form-control-sm d-inline' + (res.note != '' ? ' riganote' : '') + '" type="text" id="noteordine" maxlength="254" style="width: 400px;" value="' + res.note + '" />&nbsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagaddnoteordine\').removeClass(\'d-none\'); $(\'#tagnoteordine\').addClass(\'d-none\'); $(\'#noteordine\').removeClass(\'riganote\').addClass(\'toglinote\');;"><i class="bi bi-x-lg"></i></button></span></div></div>';
+					out += '</div></div>';
+					
+					sconti = res.sconti;
 				} else {
 					out = '';
-					if (res.tipologia != tipologia) {
-						tipologia = res.tipologia;
-						out = '<div class="row mt-2"><div class="col-12" style="border-bottom: 2px solid #000;"><strong>' + tipologia + '</strong></div></div>';
+					if (res.tipo == 'riga_articolo') {
+						if (res.tipologia != tipologia) {
+							tipologia = res.tipologia;
+							out = '<div class="row mt-2"><div class="col-12" style="border-bottom: 2px solid #000;"><strong>' + tipologia + '</strong></div></div>';
+						}
+						out += '<div class="row d-flex align-items-center rigacomanda' + (res.note != '' ? ' riganote' : '') + '" id="' + res.id + '"><div class="col-2 p-0"><div class="row d-flex align-items-center">';
+						out += '<div class="col" style="padding-right: 0px;"><button class="btn btn-sm btn-danger" onclick="cambiaqta(' + res.id + ', -1);"><i class="bi bi-dash-lg"></i></button></div>';
+						out += '<div class="col text-center p-0"><span id="tagqtaoriginale' + res.id + '" class="d-none"><del id="originale' + res.id + '">' + res.quantita + '</del><br></span><strong id="quantita' + res.id + '">' + res.quantita + '</strong><span class="d-none" id="unitario' + res.id + '">' + res.prezzo_unitario + '</span><span class="d-none" id="poriginale' + res.id + '">' + (res.prezzo_unitario * res.quantita) + '</span></div>';
+						out += '<div class="col" style="padding-left: 0px; text-align: right;"><button class="btn btn-sm btn-success" onclick="cambiaqta(' + res.id + ', 1);"><i class="bi bi-plus-lg"></i></button></div></div>';
+						out += '</div><div class="col-8">' + res.descrizione;
+						out += '<span id="tagaddnote' + res.id + '"' + (res.note != '' ? ' class="d-none"' : '') + '>&emsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagaddnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').addClass(\'riganote\');"><i class="bi bi-plus-lg"></i> Note</button></span>';
+						out += '<span id="tagnote' + res.id + '"' + (res.note == '' ? ' class="d-none"' : '') + '><br>→&nbsp;<input class="form-control form-control-sm d-inline" type="text" id="note' + res.id + '" maxlength="254" style="width: 300px;" value="' + res.note + '" />&nbsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagaddnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').removeClass(\'riganote\').addClass(\'toglinote\');;"><i class="bi bi-x-lg"></i></button></span>' + '</div>';
+						out += '<div class="col-2" style="text-align: right;" id="prezzo' + res.id + '">' + prezzo(res.prezzo_unitario * res.quantita) + '</div></div>';
+						totale += res.prezzo_unitario * res.quantita;
+					} else {
+						out += rigaSconto(res);
+						scontiapp.push(res);
+						let val = parseFloat(res.valore);
+						scontiapp[scontiapp.length - 1].valore = val;
+						totale -= val;
 					}
-					out += '<div class="row d-flex align-items-center rigacomanda' + (res.note != '' ? ' riganote' : '') + '" id="' + res.id + '"><div class="col-2 p-0"><div class="row d-flex align-items-center">';
-					out += '<div class="col" style="padding-right: 0px;"><button class="btn btn-sm btn-danger" onclick="cambiaqta(' + res.id + ', -1);"><i class="bi bi-dash-lg"></i></button></div>';
-					out += '<div class="col text-center p-0"><span id="tagqtaoriginale' + res.id + '" class="d-none"><del id="originale' + res.id + '">' + res.quantita + '</del><br></span><strong id="quantita' + res.id + '">' + res.quantita + '</strong><span class="d-none" id="unitario' + res.id + '">' + res.prezzo_unitario + '</span><span class="d-none" id="poriginale' + res.id + '">' + (res.prezzo_unitario * res.quantita) + '</span></div>';
-					out += '<div class="col" style="padding-left: 0px; text-align: right;"><button class="btn btn-sm btn-success" onclick="cambiaqta(' + res.id + ', 1);"><i class="bi bi-plus-lg"></i></button></div></div>';
-					out += '</div><div class="col-8">' + res.descrizione;
-					out += '<span id="tagaddnote' + res.id + '"' + (res.note != '' ? ' class="d-none"' : '') + '>&emsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagaddnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').addClass(\'riganote\');"><i class="bi bi-plus-lg"></i> Note</button></span>';
-					out += '<span id="tagnote' + res.id + '"' + (res.note == '' ? ' class="d-none"' : '') + '><br>→&nbsp;<input class="form-control form-control-sm d-inline" type="text" id="note' + res.id + '" maxlength="254" style="width: 300px;" value="' + res.note + '" />&nbsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagaddnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').removeClass(\'riganote\').addClass(\'toglinote\');;"><i class="bi bi-x-lg"></i></button></span>' + '</div>';
-					out += '<div class="col-2" style="text-align: right;" id="prezzo' + res.id + '">' + prezzo(res.prezzo_unitario * res.quantita) + '</div></div>';
-					totale += res.prezzo_unitario * res.quantita;
 				}
 				$('#modificaordine').append(out);
 			});
 			if (json.length == 1) {
 				$('#modificaordine').append('<br>L\'ordine richiesto non ha alcuna riga.');
 			} else {
-				out = '<div class="row mt-2"><div class="col-12" style="border-bottom: 2px solid #000;"></div></div>';
+				out = '<div id="altrisconti"></div>';
+				for (let i = 0; i < sconti.length; i++) {
+					out += '<br><button class="btn btn-secondary" onclick="aggiungiSconto(' + i + ');"><i class="bi bi-plus-lg"></i> ' + sconti[i].descrizione + '</button><br>';
+				}
+				out += '<div class="row mt-2"><div class="col-12" style="border-bottom: 2px solid #000;"></div></div>';
 				out += '<div class="row d-flex align-items-center rigacomanda"><div class="col-2"></div><div class="col-8">TOTALE</div>';
-				out += '<div class="col-2" style="text-align: right;" id="totalevecchio"><strong>' + prezzo(totale) + '</strong></div></div>';
+				out += '<div class="col-2" style="text-align: right;" id="totalevecchio"><strong>' + prezzo(omaggio ? 0 : totale) + '</strong></div></div>';
 				out += '<div class="row d-none align-items-center rigacomanda rigatotalenuovo"><div class="col-2"></div><div class="col-8">NUOVO TOTALE</div><div class="col-2" style="text-align: right;" id="totalenuovo"></div></div>';
 				out += '<div class="row d-none align-items-center rigacomanda rigatotalenuovo"><div class="col-2"></div><div class="col-8" id="rigadiff"></div><div class="col-2" style="text-align: right;" id="diff"></div></div>';
 				$('#modificaordine').append(out);
@@ -102,57 +131,109 @@ function toggleCoperti() {
 	}
 }
 
+function rigaSconto(res) {
+	let out = '<div class="row rigacomanda" id="sconto' + res.id + '">';
+	out += '<div class="col-2" style="text-align: center;"><button class="btn btn-danger" onclick="togliSconto(\'' + res.id + '\');"><i class="bi bi-x-lg"></i></button></div>';
+	out += '<div class="col-8">' + res.descrizione + '</div>';
+	out += '<div class="col-2" style="text-align: right;">- ' + prezzo(res.valore) + '</div>';
+	out += '</div>';
+	return out;
+}
+
+function menu_omaggio() {
+	omaggio2 = document.getElementById('omaggio').checked;
+	aggiornatotale();
+}
+
 function cambiaqta(idriga, diff) {
 	var qta = parseInt($('#quantita' + idriga).html());
 	var qtanuova = qta + diff;
-	if (qtanuova >= 0) {
-		var qtaoriginale = parseInt($('#originale' + idriga).html());
-		var prezzounitario = parseFloat($('#unitario' + idriga).html());
-		var prezzonuovo = prezzounitario * qtanuova;
-		var prezzooriginale = parseFloat($('#poriginale' + idriga).html());
-		$('#quantita' + idriga).html(qtanuova);
-		totalenuovo += prezzounitario * diff;
-		if (qtanuova == qtaoriginale) {
-			$('#tagqtaoriginale' + idriga).addClass('d-none');
-			$('#' + idriga).removeClass('rigadec');
-			$('#' + idriga).removeClass('rigainc');
-			$('#' + idriga).addClass('rigacomanda');
-			$('#prezzo' + idriga).html(prezzo(prezzonuovo));
-		} else {
-			$('#tagqtaoriginale' + idriga).removeClass('d-none');
-			$('#' + idriga).removeClass('rigacomanda');
-			$('#' + idriga).addClass(qtanuova > qtaoriginale ? 'rigainc' : 'rigadec');
-			$('#prezzo' + idriga).html('<del>' + prezzo(prezzooriginale) + '</del><br><strong>' + prezzo(prezzonuovo) + '</strong>');
+	if (qtanuova < 0)
+		return;
+	
+	var qtaoriginale = parseInt($('#originale' + idriga).html());
+	var prezzounitario = parseFloat($('#unitario' + idriga).html());
+	var prezzonuovo = prezzounitario * qtanuova;
+	var prezzooriginale = parseFloat($('#poriginale' + idriga).html());
+	$('#quantita' + idriga).html(qtanuova);
+	totalenuovo += prezzounitario * diff;
+	if (qtanuova == qtaoriginale) {
+		$('#tagqtaoriginale' + idriga).addClass('d-none');
+		$('#' + idriga).removeClass('rigadec');
+		$('#' + idriga).removeClass('rigainc');
+		$('#' + idriga).addClass('rigacomanda');
+		$('#prezzo' + idriga).html(prezzo(prezzonuovo));
+	} else {
+		$('#tagqtaoriginale' + idriga).removeClass('d-none');
+		$('#' + idriga).removeClass('rigacomanda');
+		$('#' + idriga).addClass(qtanuova > qtaoriginale ? 'rigainc' : 'rigadec');
+		$('#prezzo' + idriga).html('<del>' + prezzo(prezzooriginale) + '</del><br><strong>' + prezzo(prezzonuovo) + '</strong>');
+	}
+	aggiornatotale();
+}
+
+function togliSconto(id) {
+	$('#sconto' + id).remove();
+	for (let i = 0; i < scontiapp.length; i++) {
+		if (scontiapp[i].id == id) {
+			totalenuovo += scontiapp[i].valore;
+			scontiapp[i].del = true;
 		}
-		if (totalenuovo == totalevecchio) {
-			$('.rigatotalenuovo').removeClass('d-flex');
-			$('.rigatotalenuovo').addClass('d-none');
-			$('#totalevecchio').html('<strong>' + prezzo(totalevecchio) + '</strong>');
-		} else {
-			$('.rigatotalenuovo').removeClass('d-none');
-			$('.rigatotalenuovo').addClass('d-flex');
-			$('#totalevecchio').html('<del>' + prezzo(totalevecchio) + '</del>');
-			$('#totalenuovo').html('<strong>' + prezzo(totalenuovo) + '</strong>');
-			$('#rigadiff').html((totalenuovo > totalevecchio ? '<span class="text-success">CHIEDERE' : '<span class="text-danger">PAGARE') + ' AL GENT. CLIENTE');
-			$('#diff').html('<strong class="text-' + (totalenuovo > totalevecchio ? 'success' : 'danger') + '">' + prezzo(Math.abs(totalenuovo - totalevecchio)) + '</strong>');
-		}
+	}
+	aggiornatotale();
+}
+
+var scontik = 0;
+function aggiungiSconto(id) {
+	let nuovo = {"tipo": "riga_sconto", "id": "-" + scontik++, "idbase": sconti[id].id, "valore": parseFloat(sconti[id].valore), "descrizione": sconti[id].descrizione, "nuovo": true};
+	scontiapp.push(nuovo);
+	$('#altrisconti').append(rigaSconto(nuovo));
+	totalenuovo -= parseFloat(nuovo.valore);
+	aggiornatotale();
+}
+
+function aggiornatotale() {
+	let tvecchio = omaggio ? 0 : totalevecchio;
+	let tnuovo = omaggio2 ? 0 : totalenuovo;
+	if (totalenuovo == totalevecchio && omaggio == omaggio2) { // Se si è tornati al punto di partenza
+		$('.rigatotalenuovo').removeClass('d-flex');
+		$('.rigatotalenuovo').addClass('d-none');
+		$('#totalevecchio').html('<strong>' + prezzo(tvecchio) + '</strong>');
+	} else {
+		$('.rigatotalenuovo').removeClass('d-none');
+		$('.rigatotalenuovo').addClass('d-flex');
+		$('#totalevecchio').html('<del>' + prezzo(tvecchio) + '</del>');
+		$('#totalenuovo').html('<strong>' + prezzo(tnuovo) + '</strong>');
+		$('#rigadiff').html((tnuovo > tvecchio ? '<span class="text-success">CHIEDERE' : '<span class="text-danger">PAGARE') + ' AL GENT. CLIENTE');
+		$('#diff').html('<strong class="text-' + (tnuovo > tvecchio ? 'success' : 'danger') + '">' + prezzo(Math.abs(tnuovo - tvecchio)) + '</strong>');
 	}
 }
 
 function salvaordine() {
-	var id = $('#idordine').html();
-	var progressivo = $('#progressivo').html();
-	var querystring = "php/ajaxcasse.php?a=salvaordine" +
+	let tvecchio = omaggio ? 0 : totalevecchio;
+	let tnuovo = omaggio2 ? 0 : totalenuovo;
+	let id = $('#idordine').html();
+	let progressivo = $('#progressivo').html();
+	let querystring = "php/ajaxcasse.php?a=salvaordine" +
 		"&id=" + id +
 		"&tavolo=" + $('#tavolo').val() +
 		"&cliente=" + $('#cliente').val() +
 		"&coperti=" + $('#valcoperti').val() +
 		"&esportazione=" + ($('#desccoperti').html() == 'COPERTI' ? 'false' : 'true') +
-		"&totale=" + totalenuovo +
-		"&totalevecchio=" + totalevecchio +
+		"&totale=" + tnuovo +
+		"&totalevecchio=" + tvecchio +
 		"&tipo_pagamento=" + $('#tipo_pagamento').val() +
 		"&cassa=" + $('#cassa').val() +
-		"&cassavecchia=" + cassaVecchia;
+		"&cassavecchia=" + cassaVecchia +
+		"&menu_omaggio=" + (omaggio2 ? 'true' : 'false');
+	for (let i = 0; i < scontiapp.length; i++) {
+		if (scontiapp[i].nuovo && scontiapp[i].del == null) {
+			querystring += "&addsconti[]=" + scontiapp[i].idbase;
+		}
+		if (scontiapp[i].nuovo != null && scontiapp[i].del) {
+			querystring += "&delsconti[]=" + scontiapp[i].id;
+		}
+	}
 	$('.rigainc, .rigadec').each(function() {
 		querystring += '&righe[' + $(this).attr('id') + ']=' + $('#quantita' + $(this).attr('id')).html();
 	});

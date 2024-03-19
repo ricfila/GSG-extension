@@ -1,10 +1,10 @@
 <?php
 if (!isset($_GET['a']))
 	exit;
-if (!isset($_COOKIE['login']) && !isset($_COOKIE['logincasse']))
+if (!isset($_COOKIE['login']))
 	exit;
 
-require "../connect.php";
+require "../../connect.php";
 
 $conn = pg_connect((filter_var($server, FILTER_VALIDATE_IP) ? "hostaddr" : "host") . "=$server port=$port dbname=$dbname user=$user password=$password connect_timeout=5") or die('Connessione al database non riuscita.');
 if (pg_connection_status($conn) == PGSQL_CONNECTION_BAD) {
@@ -52,9 +52,13 @@ switch ($a) {
 		} else {
 			$ok = true;
 			$datiordine = pg_fetch_assoc(pg_query($conn, "select * from ordini where id = $id;"));
-			$statocl = ($datiordine['esportazione'] == 't' ? $azione : 
+			/*$statocl = ($datiordine['esportazione'] == 't' ? $azione : 
 						($azione == 'evaso' ? ($datiordine['stato_cliente'] == 'ordinato' ? ($datiordine['id_progressivo_cucina'] == null || $datiordine['id_progressivo_bar'] == null ? 'evaso' : 'lavorazione') : 'evaso') :
-							($datiordine['stato_cliente'] == 'evaso' ? ($datiordine['id_progressivo_cucina'] == null || $datiordine['id_progressivo_bar'] == null ? 'ordinato' : 'lavorazione') : 'ordinato')));
+							($datiordine['stato_cliente'] == 'evaso' ? ($datiordine['id_progressivo_cucina'] == null || $datiordine['id_progressivo_bar'] == null ? 'ordinato' : 'lavorazione') : 'ordinato')));*/
+			$statocl = ($datiordine['esportazione'] == 't' ? ($azione == 'evaso' ? 'evaso' : 'lavorazione') : 
+						($azione == 'evaso' ? ($datiordine['stato_cliente'] == 'lavorazione' ? ($datiordine['id_progressivo_cucina'] == null || $datiordine['id_progressivo_bar'] == null ? 'evaso' : 'lavorazione') : 'evaso') : ($datiordine['numeroTavolo'] == '' || $datiordine['numeroTavolo'] == 'null' ? 'ordinato' : 'lavorazione')));
+			if ($azione == 'ordinato' && $tavolo == 'null')
+				$tavolo = '';
 			$ok = $ok && pg_query($conn, "update ordini set \"numeroTavolo\" = '$tavolo', stato_$tipo = '$azione', stato_cliente = '$statocl' where id = $id;");
 			if ($datiordine['esportazione'] == 't')
 				if ($tipo == 'cucina' && $datiordine['id_progressivo_bar'] != null)
@@ -106,6 +110,44 @@ switch ($a) {
 			echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",\n";
 			echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\",\n";
 			echo "\t\t\"importo_totale\": " . $row['importo_totale'] . "\n";
+			echo "\t}" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			$i++;
+		}
+		echo "]";
+		break;
+	case 'reportmodifiche':
+		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, modifiche.agente, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and ordini.cassa = '$cassa' ORDER BY ordini.tipo_pagamento;");
+		echo "[\n";
+		$i = 0;
+		$j = 0;
+		while ($row = pg_fetch_assoc($res)) {
+			echo "\t{\n";
+			echo "\t\t\"tipo\": \"esterno\",\n";
+			echo "\t\t\"id\": " . $row['id'] . ",\n";
+			echo "\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
+			echo "\t\t\"ora\": \"" . $row['ora'] . "\",\n";
+			echo "\t\t\"agente\": \"" . $row['agente'] . "\",\n";
+			echo "\t\t\"differenza\": \"" . $row['differenza'] . "\",\n";
+			echo "\t\t\"righemodificate\": " . $row['righemodificate'] . ",\n";
+			echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\"\n";
+			echo "\t}" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			$i++;
+			$j++;
+		}
+		
+		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, ordini.cassa, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and modifiche.agente = '$cassa' ORDER BY ordini.tipo_pagamento;");
+		$i = 0;
+		while ($row = pg_fetch_assoc($res)) {
+			if ($j > 0) echo ",";
+			echo "\t{\n";
+			echo "\t\t\"tipo\": \"agente\",\n";
+			echo "\t\t\"id\": " . $row['id'] . ",\n";
+			echo "\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
+			echo "\t\t\"ora\": \"" . $row['ora'] . "\",\n";
+			echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",\n";
+			echo "\t\t\"differenza\": \"" . $row['differenza'] . "\",\n";
+			echo "\t\t\"righemodificate\": " . $row['righemodificate'] . ",\n";
+			echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\"\n";
 			echo "\t}" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
 			$i++;
 		}

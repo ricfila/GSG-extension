@@ -1,19 +1,32 @@
 <!doctype html>
-<html lang="it"><!-- Ausilio alle casse - Versione 1.0 - Settembre 2022 -->
+<html lang="it"><!-- Ausilio alle casse - Versione 1.1 - Ottobre 2023 -->
 <head>
 	<?php include "css/bootstrap.php" ?>
 	<title>Ausilio alle casse</title>
 	<link rel="icon" type="image/png" href="media/heart-fill.png" />
 </head>
+<!--
+DA FARE:
+* Finestra di riepilogo degli ordini modificati
+* Correggere il totale: per gli ordini omaggio il totale deve restare 0 anche dopo la modifica
+-->
 <body style="height: 100vh;">
 <?php
+if (isset($_GET['logout'])) {
+	unset($_COOKIE['logincasse']);
+	setcookie('logincasse', '', time() -1);
+	setcookie('login', '', time() -1);
+	header('Location: ' . $_SERVER['PHP_SELF']);
+}
+
 if (isset($_POST['pwd']) && $_POST['pwd'] == $pwd_ausilio) {
-	setcookie('logincasse', '1', time() + 60 * 60 * 24 * 365);
+	setcookie('logincasse', $_POST['nome'], time() + 60 * 60 * 24 * 365 * 2);
 	header('Location: ' . $_SERVER['PHP_SELF']);
 }
 
 if (isset($_COOKIE['logincasse'])) {
 	setcookie('login', '1', time() + 60 * 60 * 24 * 365);
+	setcookie('logincasse', $_COOKIE['logincasse'], time() + 60 * 60 * 24 * 365 * 2);
 	?>
 	<audio id="wxp" src="media/wxp.mp3" preload="auto"></audio>
 	<audio id="sallarme" src="media/allarme.wav" preload="auto"></audio>
@@ -28,6 +41,9 @@ if (isset($_COOKIE['logincasse'])) {
 				<div class="collapse navbar-collapse" id="navbarColor01">
 					<ul class="navbar-nav me-auto">
 						<?php menuturno(); ?>
+						<li class="nav-item">
+							<a class="nav-link" href="<?php echo $_SERVER['PHP_SELF']; ?>?logout=1"><i class="bi bi-person-fill"></i> <?php echo $_COOKIE['logincasse']; ?></a>
+						</li>
 					</ul>
 					<?php navdx(); ?>
 				</div>
@@ -38,7 +54,7 @@ if (isset($_COOKIE['logincasse'])) {
 			<div class="col-3 h-100" id="colonnasx" style="display: none;">
 				<div class="d-flex flex-column h-100">
 					<div class="tab-content flex-grow-1" style="overflow-y: auto;">
-						<ul id="navbarstat" class="nav nav-pills" style="padding: 10px 0px 10px 0px;">
+						<ul class="nav nav-pills" style="padding: 10px 0px 10px 0px;">
 							<li class="dropdown-header">Operazioni sugli ordini</li>
 								<li class="nav-item w-100 ml-2" style="margin-left: 15px;"><a class="linkcasse nav-link active" data-bs-toggle="tab" data-bs-target="#tabordinirecenti" href="#"><i class="bi bi-clock-fill"></i> Ordini recenti</a></li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabmodificaordine" href="#"><i class="bi bi-pencil-fill"></i> Modifica ordine</a></li>
@@ -49,7 +65,6 @@ if (isset($_COOKIE['logincasse'])) {
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabchiudicassa" href="#"><i class="bi bi-printer-fill"></i> Stampa rendiconto</a></li>
 							<li class="dropdown-header">Stato del sistema</li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabdatabase" href="#"><i class="bi bi-clipboard-check-fill"></i> Bonifica database</a></li>
-								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabmonitoraggio" href="#"><i class="bi bi-display-fill"></i> Monitoraggio</a></li>
 						</ul>
 					</div>
 				</div>
@@ -97,7 +112,6 @@ if (isset($_COOKIE['logincasse'])) {
 	<?php
 	include "php/toast.php";
 	include "php/menuturno.php";
-	include "php/strumenti/monitoraggio.php";
 	include "php/strumenti/statistiche.php";
 	include "php/strumenti/chiudicassa.php";
 	include "php/strumenti/bonifica.php";
@@ -127,14 +141,6 @@ if (isset($_COOKIE['logincasse'])) {
 						<?php echo azionibonifica(); ?><br>
 					</div>
 				</div>
-				<div id="tabmonitoraggio" class="tab-pane fade flex-column">
-					<div class="tab-content flex-grow-1 colonnadx" style="overflow-y: auto;">
-						<h4><i class="bi bi-display"></i> Monitoraggio dei backup automatici</h4><hr>
-						<div>
-							<?php echo btnaggiorna() . '<br>' . monitorbody(); ?>
-						</div>
-					</div>
-				</div>
 			</div>
 		</div>
 	</div>
@@ -162,6 +168,7 @@ if (isset($_COOKIE['logincasse'])) {
 		tab.show();
 	}
 	</script>
+	
 <?php
 } else {
 ?>
@@ -170,6 +177,12 @@ if (isset($_COOKIE['logincasse'])) {
 		<h3><i class="bi bi-heart-fill"></i> Ausilio alle casse</h3>
 		<p>Questa è un'area riservata.<br>Per potervi accedere inserisci la password:</p>
 		<form method="post">
+			<select class="form-select" name="nome">
+				<option value="Cassa1">Cassa1</option>
+				<option value="Cassa2">Cassa2</option>
+				<option value="Cassa3">Cassa3</option>
+				<option value="Cassa4">Cassa4</option>
+			</select><br>
 			<input type="password" class="form-control" placeholder="Password" name="pwd"><br>
 			<input type="submit" class="btn btn-danger" value="Accedi">
 		</form>

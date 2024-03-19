@@ -19,19 +19,17 @@ function statistiche() {
 	caricastatistiche('#statbody');
 }
 
+var xx;
 function caricastatistiche(target) {
 	$(target).html('<center><h3><div class="spinner-border"></div> Calcoli superdifficili...</h3></center>');
 	if (target == '#statbody')
 		canvasstat.show();
-	$.ajax({
-		url: "php/ajax.php?a=statistiche&questoturno=" + dataToString(data) + (pranzo(data) ? 'pranzo' : 'cena'),
-		success: function(res) {
+	$.get("php/ajax.php", {a: "statistiche", questoturno: dataToString(data) + (pranzo(data) ? 'pranzo' : 'cena')}, function(res, stato) {
+		if (stato == 'success') {
 			$(target).html(res);
-		},
-		error: function(xhr, ajaxOptions, thrownError) { // Server non raggiungibile
-			$(target).html('<span class="text-danger">Richiesta fallita per un motivo sicuramente preoccupante: </span>' + xhr.responseText);
-		},
-		timeout: 2000
+		} else {
+			$(target).html('<span class="text-danger">Richiesta fallita per un motivo sicuramente preoccupante: </span>' + stato);
+		}
 	});
 }
 

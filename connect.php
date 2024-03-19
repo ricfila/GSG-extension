@@ -10,5 +10,6 @@ $password = '';
 $pwd_pannello = '';
 $pwd_ausilio = '';
 $pwd_associazioni = '';
+$pwd_palmare = '';
 
 ?>

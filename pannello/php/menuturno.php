@@ -135,12 +135,18 @@ function impostaTurno(toast = true) {
 }
 
 // Preparazione tendina menu
-$('.dropdown').on('show.bs.dropdown', function() {
-	$(this).find('.dropdown-menu').first().stop(true, true).slideDown(100);
-});
-$('.dropdown').on('hide.bs.dropdown', function() {
-	$(this).find('.dropdown-menu').first().stop(true, true).slideUp(50);
-});
+$('.dropdown')
+	.on('show.bs.dropdown', function() {
+		$(this).find('.dropdown-menu').first().stop(true, true).slideDown(100);
+	})
+	.on('hide.bs.dropdown', function() {
+		$(this).find('.dropdown-menu').first().stop(true, true).slideUp(50);
+		$("#submenu").hide();
+	});
+$("#debugMenu")
+	.mouseenter(function () {
+		$("#submenu").show();
+	});
 
 // Salva la visualizzazione di ID o progressivo
 function toggleId() {

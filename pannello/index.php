@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it"><!-- Pannello evasione comande - Versione 1.5 - Settembre 2022 -->
+<html lang="it"><!-- Pannello evasione comande - Versione 1.5.2 - Ottobre 2023 -->
 <head>
 	<?php include "css/bootstrap.php" ?>
 	<title>Pannello evasione comande</title>
@@ -22,7 +22,7 @@ if (isset($_COOKIE['login'])) {
 	<div class="container-lg h-100" style="padding-top: 67px;">
 		<nav class="fixed-top navbar navbar-expand-lg navbar-dark bg-primary">
 			<div class="container-lg">
-				<span class="navbar-brand"><i class="bi bi-star-fill"></i> Pannello evasione comande <i class="bi bi-<?php echo $lido; ?>-circle"></i></span>
+				<span class="navbar-brand" id="brand"><i class="bi bi-star-fill"></i> Pannello evasione comande <i class="bi bi-<?php echo $lido; ?>-circle"></i></span>
 				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
 				</button>
@@ -49,13 +49,13 @@ if (isset($_COOKIE['login'])) {
 								<li><a class="dropdown-item nostart" href="#" onclick="chiudiCassaModal();"><i class="bi bi-printer"></i> Stampa rendiconto</a></li>
 								<li><hr class="dropdown-divider"></li>
 								<li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalbonifica"><i class="bi bi-clipboard-check"></i> Bonifica database</a></li>
-								<li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#modalmonitor"><i class="bi bi-display"></i> Monitoraggio</a></li>
+								<!--li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#modalmonitor"><i class="bi bi-display"></i> Monitoraggio</a></li-->
 								<li class="">
 									<a class="dropdown-item nostart" href="#"><div class="row"><div class="col"><i class="bi bi-bug"></i> Debug</div><div class="col-3" style="text-align: right;"><i class="bi bi-caret-right-fill"></i>&emsp;</div></div></a>
 									<ul class="dropdown-menu dropdown-submenu">
 										<!--li><a class="dropdown-item" href="#" onclick="postgres();"><i class="bi bi-link-45deg"></i> Stringa di connessione a PostgreSQL</a></li-->
 										<li><a class="dropdown-item nostart" id="linkjson" href="#" target="_blank"><i class="bi bi-box-arrow-up-right"></i> JSON degli ordini di questo turno</a></li>
-										<li><a class="dropdown-item" id="linkpgadmin" href="<?php echo 'http://' . $server . '/pgadmin4/browser/'; ?>" target="_blank"><i class="bi bi-box-arrow-up-right"></i> pgAdmin</a></li>
+										<!--li><a class="dropdown-item" id="linkpgadmin" href="<?php echo 'http://' . $server . '/pgadmin4/browser/'; ?>" target="_blank"><i class="bi bi-box-arrow-up-right"></i> pgAdmin</a></li-->
 										<li><a class="dropdown-item" href="#" onclick="spostaOrdini();"><i class="bi bi-arrow-90deg-right"></i> Sposta tutti gli ordini al giorno odierno</a></li>
 									</ul>
 								</li>
@@ -153,7 +153,7 @@ if (isset($_COOKIE['login'])) {
 	<?php
 	include "php/menuturno.php";
 	include "php/cerca.php";
-	include "php/strumenti/monitoraggio.php";
+	//include "php/strumenti/monitoraggio.php";
 	include "php/strumenti/statistiche.php";
 	include "php/strumenti/chiudicassa.php";
 	include "php/strumenti/debug.php";
@@ -167,6 +167,7 @@ if (isset($_COOKIE['login'])) {
 		document.getElementById('linkjson').href = "php/ajax.php?a=comande&" + infoturno();
 		getComande();
 	}
+	
 	</script>
 <?php
 } else {

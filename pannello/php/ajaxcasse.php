@@ -4,7 +4,7 @@ if (!isset($_GET['a']))
 if (!isset($_COOKIE['logincasse']))
 	exit;
 
-require "../connect.php";
+require "../../connect.php";
 
 $conn = pg_connect((filter_var($server, FILTER_VALIDATE_IP) ? "hostaddr" : "host") . "=$server port=$port dbname=$dbname user=$user password=$password connect_timeout=5") or die('Connessione al database non riuscita.');
 if (pg_connection_status($conn) == PGSQL_CONNECTION_BAD) {
@@ -19,6 +19,7 @@ foreach ($_GET as $k => $v) {
 	else
 		$$k = $v;
 }
+$logincasse = pg_escape_string($conn, $_COOKIE['logincasse']);
 setlocale(LC_ALL, 'it_IT');
 
 switch ($a) {
@@ -104,8 +105,10 @@ switch ($a) {
 		echo "\t\t\"resto\": " . $row['resto'] . ",\n";
 		echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",\n";
 		echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\",\n";
+		echo "\t\t\"menu_omaggio\": " . ($row['menu_omaggio'] == 't' ? 'true' : 'false') . ",\n";
 		echo "\t\t\"note\": \"" . $row['note'] . "\",\n";
 		echo "\t\t\"questoturno\": " . ($identificatocon == 'ID' ? (pg_num_rows(pg_query($conn, "select * from ordini where id = " . $row['id'] . " and " . infoturno() . ";")) == 1 ? "true" : "false") : "true") . ",\n";
+		
 		$res = pg_query($conn, 'select * from tipo_pagamenti;');
 		echo "\t\t\"pagamenti\": [\n";
 		$i = 0;
@@ -113,20 +116,43 @@ switch ($a) {
 			echo "\t\t\t\"" . $row['tipo_pagamento'] . "\"" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
 			$i++;
 		}
+		echo "\t\t],\n";
+		
+		$res = pg_query($conn, 'select * from sconti where is_percentuale = false;');
+		echo "\t\t\"sconti\": [\n";
+		$i = 0;
+		while ($row = pg_fetch_assoc($res)) {
+			echo "\t\t\t{\"id\": " . $row['id'] . ", \"descrizione\": \"" . $row['descrizione'] . "\", \"valore\": " . $row['valore'] . "}"	. ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			$i++;
+		}
 		echo "\t\t]\n";
 		echo "\t}";
 		
-		$res = pg_query($conn, "select * from righe join righe_articoli on righe.id = righe_articoli.id_riga where id_ordine = $id order by righe.id;");
+		// Righe articoli
+		$res = pg_query($conn, "select * from righe join righe_articoli on righe.id = righe_articoli.id_riga where id_ordine = $id and type = 'riga_articolo' order by righe.id;");
 		while ($row = pg_fetch_assoc($res)) {
 			echo ",\n";
 			echo "\t{\n";
-			echo "\t\t\"tipo\": \"" . $row['type'] . "\",\n";
+			echo "\t\t\"tipo\": \"riga_articolo\",\n";
 			echo "\t\t\"id\": " . $row['id_riga'] . ",\n";
 			echo "\t\t\"quantita\": " . $row['quantita'] . ",\n";
 			echo "\t\t\"descrizione\": \"" . $row['descrizione'] . "\",\n";
 			echo "\t\t\"prezzo_unitario\": " . $row['prezzo'] . ",\n";
 			echo "\t\t\"tipologia\": \"" . $row['desc_tipologia'] . "\",\n";
 			echo "\t\t\"note\": \"" . $row['note'] . "\"\n";
+			echo "\t}";
+		}
+		
+		// Righe sconti
+		// Vengono gestiti solo gli sconti a quota fissa, bisogna fare delle prove anche con gli sconti percentuali
+		$res = pg_query($conn, "select righe_sconto.id_riga, righe_sconto.valore, righe.descrizione from righe join righe_sconto on righe.id = righe_sconto.id_riga where id_ordine = $id and type = 'riga_sconto' order by righe.id;");
+		while ($row = pg_fetch_assoc($res)) {
+			echo ",\n";
+			echo "\t{\n";
+			echo "\t\t\"tipo\": \"riga_sconto\",\n";
+			echo "\t\t\"id\": " . $row['id_riga'] . ",\n";
+			echo "\t\t\"valore\": " . $row['valore'] . ",\n";
+			echo "\t\t\"descrizione\": \"" . $row['descrizione'] . "\"\n";
 			echo "\t}";
 		}
 		echo "\n";
@@ -136,7 +162,7 @@ switch ($a) {
 		if (!pg_query($conn, "BEGIN")) {
 			echo 'Transazione non avviata.';
 		} else {
-			$ok = pg_query($conn, "update ordini set \"numeroTavolo\" = '$tavolo', cliente = '$cliente', coperti = " . (empty($coperti) ? "null" : $coperti) . ", esportazione = $esportazione, \"totalePagato\" = $totale, resto = 0, cassa = '$cassa', tipo_pagamento = '$tipo_pagamento' where id = $id;");
+			$ok = pg_query($conn, "update ordini set \"numeroTavolo\" = '$tavolo', cliente = '$cliente', coperti = " . (empty($coperti) ? "null" : $coperti) . ", esportazione = $esportazione, \"totalePagato\" = $totale, resto = 0, cassa = '$cassa', tipo_pagamento = '$tipo_pagamento', menu_omaggio = $menu_omaggio where id = $id;");
 			if (isset($righe)) {
 				$righemod = count($righe);
 				foreach ($righe as $idriga => $qta) {
@@ -162,7 +188,21 @@ switch ($a) {
 					}
 				}
 			}
-			$ok = $ok && pg_query($conn, "insert into modifiche (id_ordine, ora, agente, differenza, righeModificate, cassaVecchia, cassaNuova) values ($id, LOCALTIME, '" . $_SERVER['REMOTE_ADDR'] . "', " . ($totale - $totalevecchio) . ", $righemod, '$cassavecchia', '$cassa');");
+			if (isset($delsconti))
+				foreach($delsconti as $idrigas) {
+					$ok = $ok && pg_query("delete from righe_sconto where id_riga = $idrigas;");
+					$ok = $ok && pg_query("delete from righe where id = $idrigas;");
+				}
+			/*
+			if (isset($addsconti))
+				foreach($addsconti as $idrigas) {
+					$ok = $ok && pg_query("insert into righe () values () returning id;");
+					
+				}
+			*/
+			
+			//$_SERVER['REMOTE_ADDR']
+			$ok = $ok && pg_query($conn, "insert into modifiche (id_ordine, ora, agente, differenza, righeModificate, cassaVecchia, cassaNuova) values ($id, LOCALTIME, '$logincasse', " . ($totale - $totalevecchio) . ", $righemod, '$cassavecchia', '$cassa');");
 			chiudiTransazione($conn, $ok);
 		}
 		break;
@@ -205,7 +245,7 @@ switch ($a) {
 		if ($res != false) {
 			echo pg_fetch_assoc($res)['fixsequences'] . '<br>';
 		} else
-			echo '<span class="text-danger">Richiesta fallita per un motivo sicuramente preoccupante</span>';
+			echo '<span class="text-danger">Richiesta fallita per un motivo sicuramente preoccupante: </span>' . pg_last_error($conn);
 		
 		break;
 	case 'ripristinagiacenze':
@@ -229,7 +269,7 @@ switch ($a) {
 	case 'svuotaevasioni':
 		$res = pg_query($conn, "DELETE FROM evasioni;");
 		if (!righeAfferite($res))
-			echo '<span class="text-danger">Qualcosa è andato storto</span>';
+			echo '<span class="text-danger">Qualcosa è andato storto: </span>' . pg_last_error($conn);
 		
 		break;
 	case 'ordinaarticoli':

@@ -94,7 +94,14 @@ switch ($a) {
 			echo (pg_query($conn, "insert into shiftstart (\"datetimestart\") values ('$data $ora');") ? '1' : pg_last_error($conn));
 		break;
 	case 'getstart':
-		echo pg_fetch_assoc(pg_query($conn, "select * from shiftstart;"))['datetimestart'];
+		$res = pg_query($conn, "select * from shiftstart;");
+		if (pg_num_rows($res) == 0) {
+			$value = date('Y-m-d') . " " . (intval(date('G')) < 17 ? "00" : "17") . ":00:00";
+			pg_query($conn, "insert into shiftstart (\"datetimestart\") values ('$value');");
+			echo $value;
+		} else {
+			echo pg_fetch_assoc($res)['datetimestart'];
+		}
 		break;
 	case 'postgres':
 		echo 'postgresql://' . $user . ':' . $password . '@' . $server . ':' . $port . '/' . $dbname;

@@ -30,7 +30,7 @@ switch ($a) {
 			$cassa = null;
 			$i = $evasi = 0;
 			while ($row = pg_fetch_assoc($res)) {
-				if ($row['cassa'] != $cassa) {
+				if ($row['cassa'] != $cassa || (empty($row['cassa']) && $i == 0)) {
 					if ($cassa != null) {
 						echo "\t\t],\n";
 						echo "\t\t\"totale\": " . $i . ",\n";
@@ -39,7 +39,7 @@ switch ($a) {
 					}
 					$cassa = $row['cassa'];
 					echo "\t{\n";
-					echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",";
+					echo "\t\t\"cassa\": \"" . $cassa . "\",";
 					echo "\t\t\"ordini\": [\n";
 					$i = 0;
 					$evasi = 0;

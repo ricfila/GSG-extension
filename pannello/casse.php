@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it"><!-- Ausilio alle casse - Versione 1.1 - Ottobre 2023 -->
+<html lang="it"><!-- Ausilio alle casse - Versione 1.2 - Marzo 2024 -->
 <head>
 	<?php include "css/bootstrap.php" ?>
 	<title>Ausilio alle casse</title>

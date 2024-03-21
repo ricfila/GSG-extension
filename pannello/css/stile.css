@@ -21,7 +21,7 @@
 	cursor: pointer;
 	animation: ordineAssOut 0.3s;
 	animation-fill-mode: forwards;
-	opacity: 1;!important
+	opacity: 1 !important;
 }
 
 .dropdown-item:hover {
@@ -49,8 +49,8 @@
 }
 
 @keyframes ordineAssOut {
-	0% {transform: scaleY(1); !important}
-	100% {transform: scaleY(0); !important}
+	0% {transform: scaleY(1) !important;}
+	100% {transform: scaleY(0) !important;}
 }
 
 .alertev {
@@ -109,7 +109,7 @@
 .dropdown-menu>li:hover>.dropdown-submenu {
 	display: block;
 	left: 100%;
-	top: calc((37px * 4) + 16px);
+	top: calc((37px * 3) + 16px);
 }
 
 .linkcasse.active {

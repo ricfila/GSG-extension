@@ -59,7 +59,7 @@ function preparaChiudiCassa(target) {
 		}
 	})
 	.fail(function(jqxhr, textStatus, error) {
-		$(target).html('<strong class="text-danger">Richiesta fallita:</strong> ' + textStatus);
+		$(target).html('<strong class="text-danger">Richiesta fallita:</strong> ' + textStatus + '<br>' + jqxhr.responseText);
 	});
 }
 

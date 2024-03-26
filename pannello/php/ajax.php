@@ -65,16 +65,16 @@ switch ($a) {
 					$ok = $ok && pg_query($conn, "update ordini set stato_bar = '$azione' where id = $id;");
 			
 			$cod = $tipo == 'bar' ? 1 : 2;
-			$num = pg_num_rows(pg_query($conn, "select * from evasioni where id_ordine = $id and stato = $cod;"));
+			$num = pg_num_rows(pg_query($conn, "select * from passaggi_stato where id_ordine = $id and stato = $cod;"));
 			if ($azione == 'evaso') {
 				if ($num == 0) {
-					$ok = $ok && pg_query($conn, "insert into evasioni (id_ordine, ora, stato) values ($id, " . ($salvaora == 'true' ? "LOCALTIME" : "null") . ", $cod);");
+					$ok = $ok && pg_query($conn, "insert into passaggi_stato (id_ordine, ora, stato) values ($id, " . ($salvaora == 'true' ? "LOCALTIME" : "null") . ", $cod);");
 				} else {
-					$ok = $ok && pg_query($conn, "update evasioni set ora = " . ($salvaora == 'true' ? "LOCALTIME" : "null") . " where id_ordine = $id and stato = $cod;");
+					$ok = $ok && pg_query($conn, "update passaggi_stato set ora = " . ($salvaora == 'true' ? "LOCALTIME" : "null") . " where id_ordine = $id and stato = $cod;");
 				}
 			} else {
 				if ($num > 0) {
-					$ok = $ok && pg_query($conn, "delete from evasioni where id_ordine = $id and stato = $cod;");
+					$ok = $ok && pg_query($conn, "delete from passaggi_stato where id_ordine = $id and stato = $cod;");
 				}
 			}
 			chiudiTransazione($conn, $ok);
@@ -164,7 +164,7 @@ switch ($a) {
 		echo statistiche($questoturno);
 		break;
 	case 'evasionirecenti':
-		$res = pg_query($conn, "select ordini.id, ordini.data, evasioni.stato, evasioni.ora from ordini inner join evasioni on ordini.id = evasioni.id_ordine where " . infoturno() . " and evasioni.ora is not null order by evasioni.ora desc;");
+		$res = pg_query($conn, "select ordini.id, ordini.data, passaggi_stato.stato, passaggi_stato.ora from ordini inner join passaggi_stato on ordini.id = passaggi_stato.id_ordine where " . infoturno() . " and passaggi_stato.ora is not null order by passaggi_stato.ora desc;");
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {

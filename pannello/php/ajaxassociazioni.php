@@ -19,16 +19,16 @@ setlocale(LC_ALL, 'it_IT');
 
 switch ($a) {
 	case 'associazionirecenti':
-		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, ordini.\"numeroTavolo\", ordini.esportazione, ordini.id_progressivo_bar, ordini.id_progressivo_cucina, ordini.cliente, ordini.cassiere, ordini.ora as ora, evasioni.ora as associazione, evasioni.stato
-		FROM ordini LEFT JOIN evasioni ON ordini.id = evasioni.id_ordine
+		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, ordini.\"numeroTavolo\", ordini.esportazione, ordini.id_progressivo_bar, ordini.id_progressivo_cucina, ordini.cliente, ordini.cassiere, ordini.ora as ora, passaggi_stato.ora as associazione, passaggi_stato.stato
+		FROM ordini LEFT JOIN passaggi_stato ON ordini.id = passaggi_stato.id_ordine
 		WHERE " . infoturno() . " and (
-			(ordini.esportazione = 't' and evasioni.stato is null) or 
-			(evasioni.stato is null and ordini.\"numeroTavolo\" <> '') or 
-			(evasioni.stato = 0 and (EXTRACT(HOUR FROM (LOCALTIME - evasioni.ora)) * 3600 +
-									EXTRACT(MINUTE FROM (LOCALTIME - evasioni.ora)) * 60 +
-									EXTRACT(SECOND FROM (LOCALTIME - evasioni.ora))) > 30))
+			(ordini.esportazione = 't' and passaggi_stato.stato is null) or 
+			(passaggi_stato.stato is null and ordini.\"numeroTavolo\" <> '') or 
+			(passaggi_stato.stato = 0 and (EXTRACT(HOUR FROM (LOCALTIME - passaggi_stato.ora)) * 3600 +
+									EXTRACT(MINUTE FROM (LOCALTIME - passaggi_stato.ora)) * 60 +
+									EXTRACT(SECOND FROM (LOCALTIME - passaggi_stato.ora))) > 30))
 		and ordini.stato_bar <> 'evaso' and ordini.stato_cucina <> 'evaso'
-		ORDER BY " . ($order == 'ora' ? "ordini.esportazione desc, ordini.cassiere, evasioni.ora" : "ordini.progressivo") . ($desc == '1' ? ' desc' : '') . ";");
+		ORDER BY " . ($order == 'ora' ? "ordini.esportazione desc, ordini.cassiere, passaggi_stato.ora" : "ordini.progressivo") . ($desc == '1' ? ' desc' : '') . ";");
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {
@@ -62,19 +62,19 @@ switch ($a) {
 		break;
 	case 'lavorazione':
 		if ($esportazione == 'true') {
-			if (pg_query($conn, "insert into evasioni (id_ordine, ora, stato) values ($id, LOCALTIME, 10);"))
+			if (pg_query($conn, "insert into passaggi_stato (id_ordine, ora, stato) values ($id, LOCALTIME, 10);"))
 				echo '1';
 		} else {
-			if (pg_query($conn, "update evasioni set stato = 10 where id_ordine = $id and stato = 0;"))
+			if (pg_query($conn, "update passaggi_stato set stato = 10 where id_ordine = $id and stato = 0;"))
 				echo '1';
 		}
 		break;
 	case 'recupera':
 		if ($esportazione == 'true') {
-			if (pg_query($conn, "delete from evasioni where id_ordine = $id and stato = 10;"))
+			if (pg_query($conn, "delete from passaggi_stato where id_ordine = $id and stato = 10;"))
 				echo '1';
 		} else {
-			if (pg_query($conn, "update evasioni set stato = 0 where id_ordine = $id and stato = 10;"))
+			if (pg_query($conn, "update passaggi_stato set stato = 0 where id_ordine = $id and stato = 10;"))
 				echo '1';
 		}
 		break;

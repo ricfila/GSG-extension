@@ -267,7 +267,7 @@ switch ($a) {
 		}
 		break;
 	case 'svuotaevasioni':
-		$res = pg_query($conn, "DELETE FROM evasioni;");
+		$res = pg_query($conn, "DELETE FROM passaggi_stato;");
 		if (!righeAfferite($res))
 			echo '<span class="text-danger">Qualcosa è andato storto: </span>' . pg_last_error($conn);
 		

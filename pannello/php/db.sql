@@ -1,4 +1,4 @@
-CREATE TABLE public.evasioni (
+CREATE TABLE public.passaggi_stato (
 	id_ordine integer,
 	ora time without time zone,
 	stato integer,

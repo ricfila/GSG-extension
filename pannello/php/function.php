@@ -43,7 +43,7 @@ function statistiche($questoturno, $soloquestoturno = false) {
 				if ($evasione == 'ordinato') { // Non evasa
 					$dati[$data . $turno][$tipo]['ne'] += 1;
 				} else if ($evasione != '') { // Evasa con orario
-					$res2 = pg_query($conn, "select * from evasioni where id_ordine = " . $row['id'] . " and (stato = 0 or stato = 10);");
+					$res2 = pg_query($conn, "select * from passaggi_stato where id_ordine = " . $row['id'] . " and (stato = 0 or stato = 10);");
 					if (pg_num_rows($res2) == 1)
 						$ora1 = pg_fetch_assoc($res2)['ora'];
 					else
@@ -259,11 +259,11 @@ function riparaEvasione($conn, $row, $tipo) {
 	if ($row['stato_' . $tipo] == 'ordinato' || ($tipo == 'bar' & ($row['esportazione'] == 't' && $row['id_progressivo_cucina'] != null))) {
 		return 'ordinato';
 	} else {
-		$res = pg_query($conn, "select * from evasioni where id_ordine = " . $row['id'] . " and stato = $cod;");
+		$res = pg_query($conn, "select * from passaggi_stato where id_ordine = " . $row['id'] . " and stato = $cod;");
 		if (pg_num_rows($res) == 1) {
 			return pg_fetch_assoc($res)['ora'];
 		} else {
-			pg_query($conn, "insert into evasioni (id_ordine, ora, stato) values (" . $row['id'] . ", null, $cod);");
+			pg_query($conn, "insert into passaggi_stato (id_ordine, ora, stato) values (" . $row['id'] . ", null, $cod);");
 			return '';
 		}
 	}

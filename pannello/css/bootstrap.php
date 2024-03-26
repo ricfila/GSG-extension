@@ -19,6 +19,10 @@ require '../connect.php';
 $pagina = (str_ends_with($_SERVER['PHP_SELF'], 'index.php') ? 'pannello' : (str_ends_with($_SERVER['PHP_SELF'], 'casse.php') ? 'ausilio' : 'associazioni'));
 $lido = str_ends_with($server, '1') ? 1 : 2;
 
+// MODIFICARE QUESTI IP SE DIVERSI DAI PROPRI:
+$ipserver1 = '192.168.1.101';
+$ipserver2 = '192.168.1.102';
+
 function menuturno() {
 	global $pagina, $lido;
 	echo '<li class="nav-item">
@@ -27,7 +31,7 @@ function menuturno() {
 }
 
 function navdx() {
-	global $server, $pagina, $lido;
+	global $server, $pagina, $lido, $ipserver1, $ipserver2;
 	echo '<ul class="navbar-nav">
 		<li class="nav-item dropdown">
 			<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><i class="bi bi-link-45deg"></i> Collegamenti</a>
@@ -37,7 +41,7 @@ function navdx() {
 				<li><a class="dropdown-item" href="casse.php"><i class="bi bi-heart' . ($pagina == 'ausilio' ? '-fill' : '') . '"></i> Ausilio alle casse</a></li>
 				<li><a class="dropdown-item" href="associazioni.php"><i class="bi bi-geo-alt' . ($pagina == 'associazioni' ? '-fill' : '') . '"></i> Associazioni</a></li>
 				<li><hr class="dropdown-divider"></li>
-				<li><a class="dropdown-item" href="http://sagra0' . ($lido == 1 ? 2 : 1) . '/pannello/' . ($pagina == 'pannello' ? '' : 'casse.php') . '"><i class="bi bi-' . ($lido == 1 ? 2 : 1) . '-circle"></i> ' . ($pagina == 'pannello' ? 'Pannello' : 'Ausilio') . ' su Sagra0' . ($lido == 1 ? 2 : 1) . '</a></li>
+				<li><a class="dropdown-item" href="http://' . ($lido == 1 ? $ipserver2 : $ipserver1) . '/pannello/' . ($pagina == 'pannello' ? '' : 'casse.php') . '"><i class="bi bi-' . ($lido == 1 ? 2 : 1) . '-circle"></i> ' . ($pagina == 'pannello' ? 'Pannello' : 'Ausilio') . ' su Sagra0' . ($lido == 1 ? 2 : 1) . '</a></li>
 			</ul>
 		</li>
 		<li class="nav-item">

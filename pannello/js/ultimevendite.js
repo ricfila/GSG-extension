@@ -39,7 +39,7 @@ function ingredienti() {
 			$.each(json, function(i, res) {
 				out = '<div class="row rigacomanda"><div class="col-4">' + res.descrizione + '</div>';
 				out += '<div class="col-4"><strong>' + res.qta + '</strong> <i><small>(' + res.comande + ' comand' + (res.comande == 1 ? 'a' : 'e') + ')</small></i></div>';
-				out += '<div class="col-4">' + (res.prezzo != 1 ? res.prezzo : '') + '</div></div>';
+				out += '<div class="col-4">' + (res.divisore != 1 ? res.divisore : '') + '</div></div>';
 				if (res.copia == 'bar')
 					bar += out;
 				else

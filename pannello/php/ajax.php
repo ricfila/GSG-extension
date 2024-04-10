@@ -107,7 +107,10 @@ switch ($a) {
 		echo 'postgresql://' . $user . ':' . $password . '@' . $server . ':' . $port . '/' . $dbname;
 		break;
 	case 'chiudicassa':
-		$res = pg_query($conn, "SELECT * FROM venduto_per_turno");
+		$res = pg_query($conn, "SELECT ordini.data, public.pranzo_cena(ora) AS pranzo_cena, cassa, tipo_pagamento, sum(\"totalePagato\" - resto) AS importo_totale
+			FROM ordini
+			GROUP BY cassa, ordini.data, (pranzo_cena(ora)), tipo_pagamento
+			ORDER BY ordini.data, (pranzo_cena(ora)) DESC, cassa, tipo_pagamento;");
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {

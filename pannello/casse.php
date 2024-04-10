@@ -176,16 +176,36 @@ if (isset($_COOKIE['logincasse'])) {
 		<br>
 		<h3><i class="bi bi-heart-fill"></i> Ausilio alle casse</h3>
 		<p>Questa è un'area riservata.<br>Per potervi accedere inserisci la password:</p>
-		<form method="post">
-			<select class="form-select" name="nome">
-				<option value="Cassa1">Cassa1</option>
-				<option value="Cassa2">Cassa2</option>
-				<option value="Cassa3">Cassa3</option>
-				<option value="Cassa4">Cassa4</option>
-			</select><br>
-			<input type="password" class="form-control" placeholder="Password" name="pwd"><br>
-			<input type="submit" class="btn btn-danger" value="Accedi">
-		</form>
+		<div id="login"></div>
+		<p class="text-danger" id="err1"></p>
+
+		<script>
+			$.getJSON("php/ajaxcasse.php?a=listacasse")
+			.done(function(json) {
+				try {
+					let lista = '';
+					$.each(json, function(i, res) {
+						lista += '<option value="' + res + '">' + res + '</option>';
+					});
+					if (lista == '') {
+						$('#login').html('<span class="text-danger">Impossibile accedere: effettuare prima un ordine.</span>');
+					} else {
+						$('#login').html('<form method="post">\
+							<select class="form-select" name="nome">' + lista + '</select><br>\
+							<input type="password" class="form-control" placeholder="Password" name="pwd"><br>\
+							<input type="submit" class="btn btn-danger" value="Accedi">\
+						</form>');
+					}
+				} catch (err) {
+					$('#err1').html('<strong class="text-danger">Errore durante l\'analisi della richiesta:</strong> ' + json);
+				}
+			})
+			.fail(function(jqxhr, textStatus, error) {
+				$('#err1').html('<strong class="text-danger">Richiesta fallita:</strong> ' + textStatus + '<br>' + jqxhr.responseText);
+				console.log(jqxhr);
+			});
+		</script>
+		
 		<?php if (isset($_POST['pwd']))
 			echo '<span class="text-danger">La password è errata</span>';
 		?>

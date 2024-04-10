@@ -1,7 +1,7 @@
 <?php
 if (!isset($_GET['a']))
 	exit;
-if (!isset($_COOKIE['logincasse']))
+if (!isset($_COOKIE['logincasse']) && $_GET['a'] != 'listacasse')
 	exit;
 
 require "../../connect.php";
@@ -19,7 +19,8 @@ foreach ($_GET as $k => $v) {
 	else
 		$$k = $v;
 }
-$logincasse = pg_escape_string($conn, $_COOKIE['logincasse']);
+if (isset($_COOKIE['logincasse']))
+	$logincasse = pg_escape_string($conn, $_COOKIE['logincasse']);
 setlocale(LC_ALL, 'it_IT');
 
 switch ($a) {
@@ -209,17 +210,17 @@ switch ($a) {
 	case 'ingredienti':
 		$ore = (int)($minuti / 60);
 		$minuti = (int)($minuti % 60);
-		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, sum(righe_ingredienti.quantita / ingredienti.prezzo) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, ingredienti.prezzo as prezzo
+		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, sum(righe_ingredienti.quantita / COALESCE(dati_ingredienti.divisore, 1)) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, COALESCE(dati_ingredienti.divisore, 1) as divisore
 		FROM righe_ingredienti
 		JOIN righe_articoli ON righe_ingredienti.id_riga_articolo = righe_articoli.id
 		JOIN righe ON righe_articoli.id_riga = righe.id
 		JOIN ordini ON righe.id_ordine = ordini.id
-		JOIN ingredienti ON righe_ingredienti.descrizionebreve = ingredienti.descrizionebreve
+		LEFT JOIN dati_ingredienti ON righe_ingredienti.descrizionebreve = dati_ingredienti.descrizionebreve
 		WHERE " . infoturno() . " and ordini.ora > LOCALTIME - '$ore:$minuti' and (
 		CASE (CASE WHEN (CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END) = 'cucina' THEN ordini.stato_cucina ELSE ordini.stato_bar END)
 			WHEN 'evaso' THEN 0 ELSE 1
 		END) = 1
-		GROUP BY righe_ingredienti.descrizionebreve, righe_articoli.copia_cucina, ingredienti.prezzo;");
+		GROUP BY righe_ingredienti.descrizionebreve, righe_articoli.copia_cucina, dati_ingredienti.divisore;");
 		echo "[";
 		$inizio = true;
 		while ($row = pg_fetch_assoc($res)) {
@@ -231,7 +232,7 @@ switch ($a) {
 			echo "\"qta\": " . $row['qta'] . ",";
 			echo "\"copia\": \"" . $row['copia'] . "\",";
 			echo "\"comande\": " . $row['comande'] . ",";
-			echo "\"prezzo\": " . $row['prezzo'] . "}";
+			echo "\"divisore\": " . $row['divisore'] . "}";
 		}
 		echo "]";
 		break;
@@ -287,6 +288,16 @@ switch ($a) {
 			}
 			chiudiTransazione($conn, $ok, true);
 		}
+		break;
+	case 'listacasse':
+		$res = pg_query($conn, "SELECT cassa FROM public.ordini GROUP BY cassa ORDER BY cassa;");
+		echo '[';
+		$i = 0;
+		while ($row = pg_fetch_assoc($res)) {
+			echo ($i != 0 ? ', ' : '') . '"' . $row['cassa'] . '"';
+			$i++;
+		}
+		echo ']';
 		break;
 	default:
 		break;

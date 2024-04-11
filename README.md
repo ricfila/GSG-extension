@@ -48,9 +48,10 @@ sudo apt-get install php-pgsql
 ```
 2. Dopo aver installato PHP aprire il file di configurazione `php.ini` (in Linux dovrebbe trovarsi in `/etc/php/8.1/apache2/php.ini` o in `/etc/php/8.1/cli/php.ini`) e decommentare (ovvero togliere il `;` ad inizio riga) le righe `extension=pdo_pgsql` e `extension=pgsql` in modo da attivare le estensioni per postgresql.
 3. In alto in questa pagina cliccare sul pulsante verde "Code" e su "Download ZIP" per scaricare il codice.
-4. Estrarre i file del pacchetto zip e spostarli nella directory del server web, in Linux corrisponde alla cartella `/var/www/html` (quindi dovranno crearsi le cartelle `/var/www/html/pannello` e `/var/www/html/palmare` e dovrà comparire il file `/var/www/html/connect.php` in questo esatto percorso)
-5. Aprire pgAdmin o una console di PostgreSQL ed eseguire la query nel file `install.sql`
-6. Il sistema è pronto per l'esecuzione tramite browser, le schermate disponibili e i loro indirizzi sono (supponendo che l'indirizzo IP del server sia 192.168.1.1):
+4. Estrarre i file del pacchetto zip e spostarli nella directory del server web, in Linux corrisponde alla cartella `/var/www/html` (quindi dovranno crearsi le cartelle `/var/www/html/pannello` e `/var/www/html/palmare` e dovrà comparire il file `/var/www/html/connect.php` in questo esatto percorso).
+5. Aprire pgAdmin o una console di PostgreSQL ed eseguire la query nel file `install.sql`.
+6. Modificare il file `connect.php` impostando i parametri richiesti per la connessione al database e, volendo, delle password per le schermate.
+7. Il sistema è pronto per l'esecuzione tramite browser, le schermate disponibili e i loro indirizzi sono (supponendo che l'indirizzo IP del server sia 192.168.1.1):
    * **Palmare sagra** (*per tablet e smartphone*): `http://192.168.1.1/palmare/`
    * **Ausilio alle casse** (*per pc e tablet*): `http://192.168.1.1/pannello/casse.php`
    * **Pannello evasione comande** (*per pc e tablet*): `http://192.168.1.1/pannello/`

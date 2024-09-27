@@ -96,10 +96,10 @@ switch ($a) {
 		echo "\t\t\"tipo\": \"ordine\",\n";
 		echo "\t\t\"id\": " . $row['id'] . ",\n";
 		echo "\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
-		echo "\t\t\"tavolo\": \"" . $row['numeroTavolo'] . "\",\n";
+		echo "\t\t\"tavolo\": \"" . addcslashes($row['numeroTavolo'], '"') . "\",\n";
 		echo "\t\t\"data\": \"" . $giorni[date_format($datacomanda, 'w')] . ' ' . date_format($datacomanda, 'j') . ' ' . $mesi[date_format($datacomanda, 'n') - 1] . ' ' . date_format($datacomanda, 'Y') . "\",\n";
 		echo "\t\t\"ora\": \"" . $row['ora'] . "\",\n";
-		echo "\t\t\"cliente\": \"" . $row['cliente'] . "\",\n";
+		echo "\t\t\"cliente\": \"" . addcslashes($row['cliente'], '"') . "\",\n";
 		echo "\t\t\"coperti\": \"" . $row['coperti'] . "\",\n";
 		echo "\t\t\"esportazione\": " . ($row['esportazione'] == 't' ? 'true' : 'false') . ",\n";
 		echo "\t\t\"totalePagato\": " . $row['totalePagato'] . ",\n";
@@ -107,7 +107,7 @@ switch ($a) {
 		echo "\t\t\"cassa\": \"" . $row['cassa'] . "\",\n";
 		echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\",\n";
 		echo "\t\t\"menu_omaggio\": " . ($row['menu_omaggio'] == 't' ? 'true' : 'false') . ",\n";
-		echo "\t\t\"note\": \"" . $row['note'] . "\",\n";
+		echo "\t\t\"note\": \"" . addcslashes($row['note'], '"') . "\",\n";
 		echo "\t\t\"questoturno\": " . ($identificatocon == 'ID' ? (pg_num_rows(pg_query($conn, "select * from ordini where id = " . $row['id'] . " and " . infoturno() . ";")) == 1 ? "true" : "false") : "true") . ",\n";
 		
 		$res = pg_query($conn, 'select * from tipo_pagamenti;');
@@ -137,10 +137,10 @@ switch ($a) {
 			echo "\t\t\"tipo\": \"riga_articolo\",\n";
 			echo "\t\t\"id\": " . $row['id_riga'] . ",\n";
 			echo "\t\t\"quantita\": " . $row['quantita'] . ",\n";
-			echo "\t\t\"descrizione\": \"" . $row['descrizione'] . "\",\n";
+			echo "\t\t\"descrizione\": \"" . addcslashes($row['descrizione'], '"') . "\",\n";
 			echo "\t\t\"prezzo_unitario\": " . $row['prezzo'] . ",\n";
-			echo "\t\t\"tipologia\": \"" . $row['desc_tipologia'] . "\",\n";
-			echo "\t\t\"note\": \"" . $row['note'] . "\"\n";
+			echo "\t\t\"tipologia\": \"" . addcslashes($row['desc_tipologia'], '"') . "\",\n";
+			echo "\t\t\"note\": \"" . addcslashes($row['note'], '"') . "\"\n";
 			echo "\t}";
 		}
 		
@@ -153,7 +153,7 @@ switch ($a) {
 			echo "\t\t\"tipo\": \"riga_sconto\",\n";
 			echo "\t\t\"id\": " . $row['id_riga'] . ",\n";
 			echo "\t\t\"valore\": " . $row['valore'] . ",\n";
-			echo "\t\t\"descrizione\": \"" . $row['descrizione'] . "\"\n";
+			echo "\t\t\"descrizione\": \"" . addcslashes($row['descrizione'], '"') . "\"\n";
 			echo "\t}";
 		}
 		echo "\n";

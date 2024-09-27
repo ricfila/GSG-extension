@@ -28,6 +28,13 @@ CREATE TABLE IF NOT EXISTS public.dati_ingredienti (
 );
 ALTER TABLE IF EXISTS public.dati_ingredienti OWNER TO postgres;
 
+CREATE TABLE IF NOT EXISTS public.shiftstart (
+	datetimestart timestamp without time zone
+)
+WITH ( OIDS = FALSE )
+TABLESPACE pg_default;
+ALTER TABLE IF EXISTS public.shiftstart OWNER to postgres;
+
 CREATE FUNCTION public.pranzo_cena("time" time without time zone) RETURNS text
     LANGUAGE plpgsql
     AS $$

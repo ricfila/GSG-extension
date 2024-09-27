@@ -35,3 +35,24 @@
 	margin-top: 20px;
 	aborder-bottom: 1px #FFF solid;
 }
+
+#tasticonferma {
+	animation: tastiSu 0.4s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease;
+}
+@keyframes tastiSu {
+	0% {margin-top: 220px; atransform: rotateX(-180deg);}
+	100% {margin-top: 0px; atransform: rotateX(0deg);}
+}
+/*
+.numt {
+	transform: rotateY(-90deg);
+	animation: tastiIn 0.4s;
+	animation-fill-mode: forwards;
+}
+@keyframes tastiIn {
+	0% {transform: rotateY(-90deg); }
+	100% {transform: rotateY(0deg); }
+}
+*/

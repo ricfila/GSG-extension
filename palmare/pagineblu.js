@@ -43,9 +43,9 @@ function ultimiassociati() {
 	});
 }
 
-let istati = [['compass', 'pencil', 'clipboard2-pulse'],
+let istati = [['compass', 'printer', 'clipboard2-pulse'],
 			['hourglass-split', 'clipboard2-pulse']];
-let lstati = [['In attesa di associazione al tavolo', 'Trascrizione tavolo in corso', 'In lavorazione'],
+let lstati = [['In attesa di associazione al tavolo', 'In attesa di stampa', 'In lavorazione'],
 			['In attesa', 'In lavorazione']];
 
 function apriordine(id, array = false) {
@@ -59,13 +59,25 @@ function apriordine(id, array = false) {
 	}
 	
 	testataordine(ordineatt, 'info', (array == 'trovati' ? (tipocerca > 2 ? 'rescerca();' : 'cercaordine();') : 'ultimiassociati();'));
-	let out = '<h4 class="mb-0">Cliente: <strong>' + ordineatt.cliente + '</strong></h4>';
+	let out = '';
+	if (!ordineatt.questoturno)
+		out += '<div class="p-2 alert alert-danger"><strong class="text-danger">Attenzione!</strong> Il presente ordine non è stato emesso in questo turno di servizio. Verifica la data sulla comanda!</div>';
+	out += '<h4 class="mb-0">Cliente: <strong>' + ordineatt.cliente + '</strong></h4>';
 	out += (ordineatt.coperti != null ? '&emsp;<strong>' + ordineatt.coperti + '</strong> copert' + (ordineatt.coperti == 1 ? 'o' : 'i') : '');
+	out += (ordineatt.note.length > 0 ? '<br>&emsp;<i class="bi bi-sticky-fill"></i>&nbsp;' + ordineatt.note : '');
+
 	if (ordineatt.esportazione == true) {
 		out += '<h4 class="mt-2">Ordine per ASPORTO</h4>';
 	} else {
 		let notavolo = ordineatt.tavolo == null || ordineatt.tavolo == '' || ordineatt.tavolo == 'null';
-		out += '<h4 class="mt-2 mb-0">Tavolo: <strong>' + (notavolo ? '<small class="text-body-secondary"><i>non associato</i></small>' : ordineatt.tavolo) + '</strong>' + (array == 'ordinic' || (!notavolo && ordineatt.stato == 0) ? '&emsp;<button class="btn btn-sm btn-outline-danger" onclick="dialogRipristina();">Dissocia</button>' : '') + '</h4>';
+		out += '<h4 class="mt-2 mb-0">Tavolo: <strong>';
+		if (notavolo) {
+			if (ordini[ordineatt.id] == null)
+				ordini[ordineatt.id] = ordineatt;
+			out += '<small class="text-body-secondary"><i>non associato</i>&emsp;<button class="btn btn-sm btn-success" onclick="ordine(' + ordineatt.id + ');">Associa ora</button></small>';
+		} else
+			out += ordineatt.tavolo;
+		out += '</strong>' + (array == 'ordinic' || (!notavolo && ordineatt.stato == 0) ? '&emsp;<button class="btn btn-sm btn-outline-danger" onclick="dialogRipristina();">Dissocia</button>' : '') + '</h4>';
 		out += (array == 'ordinic' ? '&emsp;Associato da <strong><i>te stesso</i></strong>' :
 			(ordineatt.associazione != null && ordineatt.associazione != 'null' ? '&emsp;Associato da <strong>' + ordineatt.cameriere + '</strong> alle ' + ordineatt.associazione.substr(0, 5) : ''));
 	}
@@ -90,14 +102,16 @@ function apriordine(id, array = false) {
 		let bevasa = ordineatt.stato_bar != 'ordinato';
 		let cevasa = ordineatt.stato_cucina != 'ordinato';
 		if (ordineatt.copia_bar && !ordineatt.esportazione) {
-			out += '<h4 class="mb-0 text-info">Comanda bevande:</h4>';
+			out += '<div class="row"><div class="col"><h4 class="mb-0 text-info">Comanda bevande:</h4></div>';
+			out += '<div class="col-auto"><button class="btn btn-sm btn-info" onclick="apricomanda(1);"><i class="bi bi-list-task"></i> Leggi</button></div></div>';
 			for (let i = 0; i < 3; i++) {
 				out += '&emsp;<i class="bi bi-' + istati[0][i] + (i < statocomanda || bevasa ? '-fill' : '') + '"></i> ' + (i == statocomanda && !bevasa ? lstati[0][i] : '') + '<br>';
 			}
 			out += '&emsp;<i class="bi bi-star' + (bevasa ? '-fill"></i> Evasa' + (ordineatt.stato_bar != '' ? ' alle ' + ordineatt.stato_bar.substr(0, 5) : '') : '"></i>');
 		}
 		if (ordineatt.copia_cucina) {
-			out += '<h4 class="mt-2 mb-0" style="color: #eb8e38;">Comanda cucina:</h4>';
+			out += '<div class="row"><div class="col"><h4 class="mt-2 mb-0" style="color: var(--bs-orange);">Comanda cucina:</h4></div>';
+			out += '<div class="col-auto"><button class="btn btn-sm text-light" style="background-color: var(--bs-orange);" onclick="apricomanda(2);"><i class="bi bi-list-task"></i> Leggi</button></div></div>';
 			for (let i = 0; i < 3; i++) {
 				if (ordineatt.esportazione && i == 2)
 					break;
@@ -110,6 +124,33 @@ function apriordine(id, array = false) {
 	.css('opacity', 0)
 	.html(out)
 	.animate({opacity: 1});
+}
+
+function apricomanda(tipo) {
+	out = '';
+	$.getJSON("ajax.php?a=comanda&id=" + ordineatt.id + "&tipo=" + tipo)
+	.done(function(json) {
+		try {
+			tipologia = null;
+			$.each(json, function(i, art) {
+				if (art.tipologia != tipologia) {
+					out += '<h6 class="' + (tipologia != null ? 'mt-3 ' : '') + 'p-2 text-light" style="background: var(--bs-gray);">' + art.tipologia + '</h6>';
+					tipologia = art.tipologia;
+				}
+				out += '<div class="row"><div class="col-1">' + art.quantita + '</div><div class="col">' + art.descrizione + '</div></div>';
+				if (art.note.length > 0)
+					out += '<div class="row"><div class="col-1"></div><div class="col"><i class="bi bi-sticky-fill"></i>&nbsp;' + art.note + '</div></div>';
+			});
+		} catch (err) {
+			out = '<span class="text-danger"><strong>Errore nell\'elaborazione della richiesta:</strong></span>' + json;
+		}
+	})
+	.fail(function(jqxhr, textStatus, error) {
+		out = '<span class="text-danger"><strong>Errore durante la richiesta:</strong></span>' + jqxhr.responseText;
+	})
+	.always(function() {
+		dialog((tipo == 1 ? '<strong class="text-info">Comanda bevande</strong>' : '<strong style="color: var(--bs-orange);">Comanda cucina</strong>'), out);
+	});
 }
 
 function dialogRipristina() {

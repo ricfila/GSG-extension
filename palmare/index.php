@@ -35,7 +35,7 @@ if (isset($_COOKIE['cameriere'])) {
 	setcookie('cameriere', $_COOKIE['cameriere'], time() + 60 * 60 * 24 * 7);
 	?>
 	<div class="container-lg h-100" style="padding-top: 80px;">
-		<nav class="fixed-top navbar navbar-expand-lg navbar-dark bg-success" style="transition: 0.3s;">
+		<nav class="fixed-top navbar navbar-expand-lg navbar-dark bg-success" style="transition: 0.2s;">
 			<div class="container-lg">
 				<span class="navbar-brand">
 					<a href="#" class="navbar-brand" onclick="preparalista();"><i class="bi bi-compass-fill"></i> Palmare sagra&emsp;</a><span id="attesa"></span>&nbsp;<span id="errore" onclick="mostraerrore();"></span> <!--i class="bi bi-<?php echo (str_ends_with($server, '1') ? 1 : 2); ?>-circle"></i-->
@@ -63,12 +63,25 @@ if (isset($_COOKIE['cameriere'])) {
 		<div id="titolo" style="transition: 0.3s;">
 			<div class="alert alert-success" style="width: 100%; padding: 50px 15px;" onclick="$(this).remove(); $('#corpo').html(''); preparalista();">
 				<h4 class="text-success">Bentornato/a, <strong><?php echo $_COOKIE['cameriere']; ?></strong></h4>
-				Tocca qui per iniziare.
+				Tocca qui per iniziare
 			</div>
+			<?php
+			$tot = pg_fetch_assoc(pg_query($conn, "SELECT count(*) as tot FROM ordini WHERE cassiere = '" . $_COOKIE['cameriere'] . "';"))['tot'];
+			$gradi = ['Associatore novizio', 'Principiante promettente', 'Abile tirocinante', 'Adocchia-clienti provetto', 'Gira-tavoli ferrato', 'Cameriere bersagliere',
+			'Abbinatore esperto', 'Servitore assessore', 'Maggiordomo qualificato', 'Generale pluridecorato', 'Sovrano della sala'];
+			$icone = ['dice-1-fill', 'dice-2-fill', 'dice-3-fill', 'dice-4-fill', 'dice-5-fill', 'dice-6-fill',
+			'fire', 'award-fill', 'mortarboard-fill', 'stars', 'trophy-fill'];
+			$grado = $tot >= 100 ? 11 : intval($tot / 10) + 1;
+			?>
+			<br>
+			<h6>Fino ad ora hai abbinato <strong><?php echo $tot; ?></strong> ordini</h6>
+			<p>Hai raggiunto il grado <?php echo ($grado == 11 ? 'massimo' : $grado);?>:</p>
+			<?php echo '<h5 class="text-' . ($grado < 7 ? 'primary' : ($grado < 11 ? 'danger' : 'warning')) . '"><i class="bi bi-' . $icone[$grado - 1] . '"></i>&nbsp;' . $gradi[$grado - 1] . '</h5>'; ?>
+			<br>
 		</div>
 		<hr>
 		<div id="corpo">
-			<a class="btn btn-outline-danger" href="index.php?logout=1">Non sei tu?</a>
+			<a class="btn btn-outline-danger" href="index.php?logout=1">Cambia utente</a>
 		</div>
 		
 		<div class="modal fade" id="dialog">

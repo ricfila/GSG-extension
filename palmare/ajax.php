@@ -22,13 +22,13 @@ foreach ($_COOKIE as $k => $v) {
 	if (str_starts_with($k, 'action')) {
 		$azione = explode("_", $v);
 		if ($azione[0] == '0') { // Salva il tavolo
-			if (pg_num_rows(pg_query($conn, "select * from evasioni where id_ordine = " . $azione[1] . " and (stato = 0 or stato = 10);")) == 0) {
+			if (pg_num_rows(pg_query($conn, "select * from passaggi_stato where id_ordine = " . $azione[1] . " and (stato = 0 or stato = 10);")) == 0) {
 				if (!pg_query($conn, "BEGIN")) {
 					exit('Transazione non avviata.');
 				} else {
 					$ok = true;
 					$ok = $ok && pg_query($conn, "update ordini set \"numeroTavolo\" = '" . $azione[2] . "', cassiere = '" . pg_escape_string($conn, $_COOKIE['cameriere']) . "' where id = " . $azione[1] . ";");
-					$ok = $ok && pg_query($conn, "insert into evasioni (id_ordine, ora, stato) values (" . $azione[1] . ", LOCALTIME, 0);");
+					$ok = $ok && pg_query($conn, "insert into passaggi_stato (id_ordine, ora, stato) values (" . $azione[1] . ", LOCALTIME, 0);");
 					if (chiudiTransazione($conn, $ok, 'no')) {
 						cancellaCookie($k);
 					} else
@@ -38,14 +38,14 @@ foreach ($_COOKIE as $k => $v) {
 				cancellaCookie($k);
 			}
 		} else if ($azione[0] == '-') { // Dissocia
-			if (pg_fetch_assoc(pg_query($conn, "select * from evasioni where id_ordine = " . $azione[1] . " order by stato;"))['stato'] == 0) {
-				if (pg_num_rows(pg_query($conn, "select * from evasioni where id_ordine = " . $azione[1] . " and stato = 0;")) == 1) {
+			if (pg_fetch_assoc(pg_query($conn, "select * from passaggi_stato where id_ordine = " . $azione[1] . " order by stato;"))['stato'] == 0) {
+				if (pg_num_rows(pg_query($conn, "select * from passaggi_stato where id_ordine = " . $azione[1] . " and stato = 0;")) == 1) {
 					if (!pg_query($conn, "BEGIN")) {
 						exit('Transazione non avviata.');
 					} else {
 						$ok = true;
 						$ok = $ok && pg_query($conn, "update ordini set \"numeroTavolo\" = '', cassiere = '' where id = " . $azione[1] . ";");
-						$ok = $ok && pg_query($conn, "delete from evasioni where id_ordine = " . $azione[1] . " and stato = 0;");
+						$ok = $ok && pg_query($conn, "delete from passaggi_stato where id_ordine = " . $azione[1] . " and stato = 0;");
 						if (chiudiTransazione($conn, $ok, 'no')) {
 							cancellaCookie($k);
 						} else
@@ -83,7 +83,7 @@ switch ($a) {
 		echo "]";
 		break;
 	case 'ultimi':
-		$res = pg_query($conn, "select ordini.id, ordini.progressivo, ordini.cassiere, ordini.cliente, ordini.coperti, ordini.data, ordini.ora, evasioni.ora as associazione, evasioni.stato, ordini.stato_bar, ordini.stato_cucina, ordini.id_progressivo_bar, ordini.id_progressivo_cucina, ordini.\"numeroTavolo\", ordini.esportazione from ordini join evasioni on ordini.id = evasioni.id_ordine where " . infoturnopalmare() . " and ordini.esportazione = false and ordini.cassiere = '" . pg_escape_string($conn, $_COOKIE['cameriere']) . "' and (evasioni.stato = 0 or evasioni.stato = 10) order by evasioni.ora desc;");
+		$res = pg_query($conn, "select ordini.id, ordini.progressivo, ordini.cassiere, ordini.cliente, ordini.coperti, ordini.data, ordini.ora, passaggi_stato.ora as associazione, passaggi_stato.stato, ordini.stato_bar, ordini.stato_cucina, ordini.id_progressivo_bar, ordini.id_progressivo_cucina, ordini.\"numeroTavolo\", ordini.esportazione from ordini join passaggi_stato on ordini.id = passaggi_stato.id_ordine where " . infoturnopalmare() . " and ordini.esportazione = false and ordini.cassiere = '" . pg_escape_string($conn, $_COOKIE['cameriere']) . "' and (passaggi_stato.stato = 0 or passaggi_stato.stato = 10) order by passaggi_stato.ora desc;");
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {
@@ -123,7 +123,7 @@ switch ($a) {
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {
-			$res2 = pg_query($conn, "select * from evasioni where id_ordine = " . $row['id'] . " and (stato = 0 or stato = 10);");
+			$res2 = pg_query($conn, "select * from passaggi_stato where id_ordine = " . $row['id'] . " and (stato = 0 or stato = 10);");
 			$row2 = pg_fetch_assoc($res2);
 			$assoc = (pg_num_rows($res2) == 1 ? $row2['ora'] : 'null');
 			$stato = (pg_num_rows($res2) == 1 ? $row2['stato'] : "\"null\"");

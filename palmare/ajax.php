@@ -100,7 +100,8 @@ switch ($a) {
 		json_ordini($res);
 		break;
 	case 'comanda':
-		$res = pg_query($conn, "SELECT * FROM righe JOIN righe_articoli ON righe.id = righe_articoli.id_riga WHERE righe.id_ordine = $id AND righe_articoli.copia_" . ($tipo == 1 ? "bar" : "cucina") . " = true ORDER BY righe_articoli.posizione;");
+		$asporto = pg_fetch_assoc(pg_query($conn, "SELECT esportazione FROM ordini WHERE id = $id;"))['esportazione'] == 't';
+		$res = pg_query($conn, "SELECT * FROM righe JOIN righe_articoli ON righe.id = righe_articoli.id_riga WHERE righe.id_ordine = $id AND (righe_articoli.copia_" . ($tipo == 1 ? "bar" : "cucina") . " = true" . ($asporto ? " OR righe_articoli.copia_bar = true" : "") . ") ORDER BY righe_articoli.posizione;");
 		echo "[\n";
 		$i = 0;
 		while ($row = pg_fetch_assoc($res)) {

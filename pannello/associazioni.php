@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><!-- Pannello associazioni - Versione 1.1 - Ottobre 2023 -->
 <head>
-	<?php include "css/bootstrap.php" ?>
+	<?php include "php/bootstrap.php" ?>
 	<title>Associazioni</title>
 	<?php echo icona(); ?>
 </head>

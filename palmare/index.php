@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="it"><!-- Palmare - Versione 1.1 - Ottobre 2023 -->
+<html lang="it"><!-- Palmare - Versione 1.2 - Ottobre 2024 -->
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<meta charset="utf-8" />
-	<link href="../pannello/bootstrap-5.0.2-dist/css/bootstrap.css" rel="stylesheet" />
-	<link href="../pannello/bootstrap-5.0.2-dist/css/bootstrap-icons.css" rel="stylesheet" />
-	<script src="../pannello/bootstrap-5.0.2-dist/js/bootstrap.bundle.min.js"></script>
-	<script src="../pannello/js/jquery-3.6.0.min.js"></script>
-	<link rel="stylesheet" href="../pannello/css/stile.css" />
+	<link href="../css/bootstrap-5.0.2/bootstrap.css" rel="stylesheet" />
+	<link href="../css/bootstrap-5.0.2/bootstrap-icons.css" rel="stylesheet" />
+	<script src="../js/bootstrap-5.0.2/bootstrap.bundle.min.js"></script>
+	<script src="../js/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="../css/stile.css" />
 	<link rel="stylesheet" href="stile_palmare.css" />
 	<link rel="icon" type="image/png" href="../pannello/media/compass-fill.png" />
 	<title>Palmare sagra</title>

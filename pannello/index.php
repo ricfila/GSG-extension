@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><!-- Pannello evasione comande - Versione 1.5.2 - Ottobre 2023 -->
 <head>
-	<?php include "css/bootstrap.php" ?>
+	<?php include "php/bootstrap.php" ?>
 	<title>Pannello evasione comande</title>
 	<?php echo icona(); ?>
 </head>

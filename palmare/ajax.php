@@ -146,7 +146,7 @@ function json_ordini($res) {
 		echo "\t\t\"progressivo\": " . $row['progressivo'] . ",\n";
 		echo "\t\t\"cameriere\": \"" . $row['cassiere'] . "\",\n";
 		echo "\t\t\"cliente\": \"" . ($row['cliente'] == null || empty($row['cliente']) ? '<i>nessun nome</i>' : $row['cliente']) . "\",\n";
-		echo "\t\t\"coperti\": " . ($row['esportazione'] == 't' ? 0 : $row['coperti']) . ",\n";
+		echo "\t\t\"coperti\": " . ($row['esportazione'] == 't' || empty($row['coperti']) ? 0 : $row['coperti']) . ",\n";
 		echo "\t\t\"data\": \"" . $giorni[date_format($oracomanda, 'w')] . ' ' . date_format($oracomanda, 'j') . "\",\n";
 		echo "\t\t\"ora\": \"" . $row['ora'] . "\",\n";
 		echo "\t\t\"associazione\": \"" . $assoc . "\",\n";

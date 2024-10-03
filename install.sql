@@ -21,10 +21,12 @@ CREATE TABLE IF NOT EXISTS public.modifiche (
 ALTER TABLE IF EXISTS public.modifiche OWNER TO postgres;
 
 CREATE TABLE IF NOT EXISTS public.dati_ingredienti (
-	descrizionebreve character varying(15),
+	id_ingrediente integer,
 	divisore integer DEFAULT 1,
 	settore character varying(255),
-	PRIMARY KEY (descrizionebreve)
+	monitora boolean DEFAULT true,
+	PRIMARY KEY (id_ingrediente),
+	FOREIGN KEY (id_ingrediente) REFERENCES ingredienti(id) ON DELETE cascade ON UPDATE cascade
 );
 ALTER TABLE IF EXISTS public.dati_ingredienti OWNER TO postgres;
 

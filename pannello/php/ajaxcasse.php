@@ -210,12 +210,13 @@ switch ($a) {
 	case 'ingredienti':
 		$ore = (int)($minuti / 60);
 		$minuti = (int)($minuti % 60);
-		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, sum(ceil(righe_ingredienti.quantita::decimal / COALESCE(dati_ingredienti.divisore, 1))) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, COALESCE(dati_ingredienti.divisore, 1) as divisore
+		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, ceil(sum(righe_ingredienti.quantita::decimal / COALESCE(dati_ingredienti.divisore, 1))) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, COALESCE(dati_ingredienti.divisore, 1) as divisore
 		FROM righe_ingredienti
 		JOIN righe_articoli ON righe_ingredienti.id_riga_articolo = righe_articoli.id
 		JOIN righe ON righe_articoli.id_riga = righe.id
 		JOIN ordini ON righe.id_ordine = ordini.id
-		LEFT JOIN dati_ingredienti ON righe_ingredienti.descrizionebreve = dati_ingredienti.descrizionebreve
+		JOIN ingredienti ON righe_ingredienti.descrizionebreve = ingredienti.descrizionebreve
+		LEFT JOIN dati_ingredienti ON ingredienti.id = dati_ingredienti.id_ingrediente
 		WHERE " . infoturno() . " and ordini.ora > LOCALTIME - '$ore:$minuti' and (
 		CASE (CASE WHEN (CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END) = 'cucina' THEN ordini.stato_cucina ELSE ordini.stato_bar END)
 			WHEN 'evaso' THEN 0 ELSE 1

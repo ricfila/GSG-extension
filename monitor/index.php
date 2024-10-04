@@ -16,14 +16,31 @@
 	if (pg_connection_status($conn) == PGSQL_CONNECTION_BAD) {
 		echo 'Errore di connessione al database.';
 	}
+	if (isset($_GET['s']))
+		$settore = pg_escape_string($conn, $_GET['s']);
 	?>
 </head>
-<body aclass="bg-warning">
-	<div class="container-lg h-100 pt-4">
+<body>
+	<div class="container-lg h-100" style="padding-top: 80px;">
+		<nav class="fixed-top navbar navbar-expand-lg navbar-dark bg-warning">
+			<div class="container-lg">
+				<span class="navbar-brand">
+					<a href="index.php" class="navbar-brand"><i class="bi bi-display-fill"></i> <?php echo (isset($settore) ? $settore : 'Monitor cucina'); ?></a>
+				</span>
+				
+				<?php if (isset($settore)) { ?>
+					<ul class="navbar-nav text-end">
+						<li class="nav-item">
+							<a class="nav-link" href="#" onclick="aggiorna();"><i class="bi bi-arrow-clockwise"></i> Aggiorna</a>
+						</li>
+					</ul>
+				<?php } ?>
+			</div>
+		</nav>
+
 		<?php
-		if (!isset($_GET['s'])) {
+		if (!isset($settore)) {
 			?>
-			<h1><i class="bi bi-display-fill"></i> Monitor cucina</h1>
 			<h5>Seleziona il reparto degli ingredienti che vuoi controllare</h5>
 
 			<div class="row mt-4">
@@ -50,42 +67,38 @@
 			</div>
 			<?php
 		} else {
-			$settore = pg_escape_string($conn, $_GET['s']);
 			?>
 			
-			<div class="row">
-				<div class="col-12 col-sm-auto">
-					<h1><i class="bi bi-display-fill"></i> <?php echo $settore; ?></h1>
-				</div>
-				<div class="col-6 my-auto">
-					<a class="btn btn-sm btn-outline-dark" href="index.php"><i class="bi bi-caret-left-fill"></i> Cambia reparto</a>
-				</div>
-				<div class="col-6 col-sm-auto my-auto text-end">
-					<button class="btn btn-success" onclick="aggiorna();"><i class="bi bi-arrow-clockwise"></i> Aggiorna</button>
-				</div>
 			
 			<p id="err"></p>
 			<div id="corpo" class="mt-4"></div>
 
 			<script>
 				function aggiorna() {
+					let pre = $('#corpo').html();
+					$('#corpo').html('<div class="spinner-border"></div> Caricamento in corso...');
+
 					$.getJSON("ajax.php?a=ingredienti&settore=<?php echo $settore; ?>")
 					.done(function(json) {
 						$('#err').html('');
-						$('#corpo').html('');
 						try {
+							let out = '';
 							$.each(json, function(i, res) {
-								
+								out += '<h4 class="mt-4">' + res.descrizione + ':&emsp;<span class="bg-' + (res.qta_attiva == 0 ? "dark" : (res.qta_attiva < 10 ? "success" : "danger")) + ' text-light py-1 px-3 rounded-3" style="width: 300px;">' + res.qta_attiva + '</span></h4>';
+								out += '<p>Ordinati: ' + (parseInt(res.qta_attiva) + parseInt(res.qta_evasa)) + ' - Evasi: ' + res.qta_evasa + '</p>';
 							});
+							$('#corpo').html(out);
 						} catch (err) {
 							$('#err').html('<span class="text-danger"><strong>Errore nell\'elaborazione della richiesta:</strong></span>' + json);
 						}
 					})
 					.fail(function(jqxhr, textStatus, error) {
 						$('#err').html('<span class="text-danger"><strong>Errore durante la richiesta:</strong></span>' + jqxhr.responseText);
+						$('#corpo').html(pre);
 					})
 				}
-
+				aggiorna();
+				setInterval(aggiorna, 30*1000);
 			</script>
 			<?php
 		}

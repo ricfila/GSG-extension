@@ -63,8 +63,9 @@ if (isset($_COOKIE['logincasse'])) {
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabultimevendite" href="#"><i class="bi bi-cart-fill"></i> Ultime vendite</a></li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabstatistiche" href="#"><i class="bi bi-bar-chart-fill"></i> Statistiche sul servizio</a></li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabchiudicassa" href="#"><i class="bi bi-printer-fill"></i> Stampa rendiconto</a></li>
-							<li class="dropdown-header">Stato del sistema</li>
+							<li class="dropdown-header">Gestione del sistema</li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabdatabase" href="#"><i class="bi bi-clipboard-check-fill"></i> Bonifica database</a></li>
+								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabingredienti" href="#"><i class="bi bi-list-task"></i> Anagrafica ingredienti</a></li>
 						</ul>
 					</div>
 				</div>
@@ -115,6 +116,7 @@ if (isset($_COOKIE['logincasse'])) {
 	include "php/strumenti/statistiche.php";
 	include "php/strumenti/chiudicassa.php";
 	include "php/strumenti/bonifica.php";
+	include "php/strumenti/ingredienti.php";
 	?>
 	<script src="js/modificaordine.js"></script>
 	<script src="js/ordinirecenti.js"></script>
@@ -139,6 +141,21 @@ if (isset($_COOKIE['logincasse'])) {
 					<div class="tab-content flex-grow-1 colonnadx" style="overflow-y: auto;">
 						<h4><i class="bi bi-clipboard-check"></i> Azioni di bonifica del database</h4><hr>
 						<?php echo azionibonifica(); ?><br>
+					</div>
+				</div>
+				<div id="tabingredienti" class="tab-pane fade flex-column">
+					<div class="tab-content flex-grow-1 colonnadx" style="overflow-y: auto;">
+						<h4><i class="bi bi-list-task"></i> Anagrafica degli ingredienti e giacenze</h4><hr>
+						<div class="row">
+							<div class="col-auto input-group mb-3 w-50">
+								<input type="text" class="form-control" id="filtraingredienti" onkeyup="filtraingredienti();" placeholder="Cerca tra gli ingredienti..."/>
+								<button class="btn btn-danger" onclick="$('#filtraingredienti').val(''); filtraingredienti();"><i class="bi bi-x-lg"></i></button>
+							</div>
+							<div class="col">
+								<button class="btn btn-success" onclick="modificaing(null);"><i class="bi bi-plus-lg"></i> Nuovo ingrediente</button>
+							</div>
+						</div>
+						<div id="ingredientibody"></div>
 					</div>
 				</div>
 			</div>

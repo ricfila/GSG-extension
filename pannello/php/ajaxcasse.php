@@ -207,7 +207,7 @@ switch ($a) {
 			chiudiTransazione($conn, $ok);
 		}
 		break;
-	case 'ingredienti':
+	case 'ultimevendite':
 		$ore = (int)($minuti / 60);
 		$minuti = (int)($minuti % 60);
 		$res = pg_query($conn, "SELECT righe_ingredienti.descrizionebreve as descrizionebreve, ceil(sum(righe_ingredienti.quantita::decimal / COALESCE(dati_ingredienti.divisore, 1))) as qta, CASE WHEN righe_articoli.copia_cucina THEN 'cucina' ELSE 'bar' END as copia, count(DISTINCT ordini.id) as comande, COALESCE(dati_ingredienti.divisore, 1) as divisore
@@ -300,6 +300,81 @@ switch ($a) {
 		}
 		echo ']';
 		break;
+	case 'ingredienti':
+		$res = pg_query($conn, "SELECT ingredienti.id, ingredienti.descrizione, ingredienti.descrizionebreve, dati_ingredienti.settore, dati_ingredienti.divisore, dati_ingredienti.monitora, giacenze.scorta_iniziale as giacenza
+			FROM ingredienti
+			LEFT JOIN dati_ingredienti ON ingredienti.id = dati_ingredienti.id_ingrediente
+			LEFT JOIN giacenze ON ingredienti.id_giacenza = giacenze.id
+			ORDER BY $orderby;");
+		$out = array();
+		while ($row = pg_fetch_assoc($res)) {
+			$out[] = $row;
+		}
+		echo json_encode($out);
+		break;
+	case 'salvainfoing':
+		$ok = true;
+		if ($id == null) {
+			$res = pg_query($conn, "INSERT INTO ingredienti (descrizione, descrizionebreve, id_giacenza, prezzo) VALUES ('$descrizione', $descrizionebreve', null, 0) RETURNING id;");
+			if ($res != false) {
+				$id = pg_fetch_assoc($res)['id'];
+				$ok = $ok && pg_query($conn, "INSERT INTO dati_ingredienti (id_ingrediente, divisore, settore, monitora) VALUES ($id, $divisore, '$settore', $monitora);");
+			}
+		} else {
+			$ok = $ok && pg_query($conn, "UPDATE ingredienti SET descrizione = '$descrizione', descrizionebreve = '$descrizionebreve' WHERE id = $id;");
+			if (pg_num_rows(pg_query("SELECT * FROM dati_ingredienti WHERE id_ingrediente = $id;")) == 1) {
+				$ok = $ok && pg_query($conn, "UPDATE dati_ingredienti SET divisore = $divisore, settore = '$settore', monitora = $monitora WHERE id_ingrediente = $id;");
+			} else {
+				$ok = $ok && pg_query($conn, "INSERT INTO dati_ingredienti (id_ingrediente, divisore, settore, monitora) VALUES ($id, $divisore, '$settore', $monitora);");
+			}
+		}
+		if ($ok)
+			echo '1';
+		else
+			echo pg_last_error($conn);
+		break;
+	case 'salvagiacenza':
+		$infinito = ($giacenza == '' || $giacenza == null);
+		if ($giacenza != null) {
+			$divisore = pg_fetch_assoc(pg_query($conn, "SELECT * FROM dati_ingredienti WHERE id_ingrediente = $id;"))['divisore'];
+			$giacenza = $giacenza * $divisore;
+		}
+		
+		$id_giacenza = pg_fetch_assoc(pg_query($conn, "SELECT * FROM ingredienti WHERE id = $id;"))['id_giacenza'];
+		//$id_giacenza = null;
+
+		$ok = true;
+		if ($id_giacenza == null) {
+			$res = pg_query($conn, "INSERT INTO giacenze (scorta_iniziale, data_disponibilita) VALUES (" . ($infinito ? "null" : $giacenza) . ", " . ($infinito ? "null" : "LOCALTIMESTAMP") . ") RETURNING id;");
+			if ($res != false) {
+				$id_giacenza = pg_fetch_assoc($res)['id'];
+				$ok = $ok && pg_query($conn, "UPDATE ingredienti SET id_giacenza = $id_giacenza WHERE id = $id;");
+			}
+		} else {
+			$ok = $ok && pg_query($conn, "UPDATE giacenze SET scorta_iniziale = " . ($infinito ? "null" : $giacenza) . ", data_disponibilita = " . ($infinito ? "null" : "LOCALTIMESTAMP") . " WHERE id = $id_giacenza;");
+		}
+		if ($ok)
+			echo '1';
+		else
+			echo pg_last_error($conn);
+		break;
+	case 'qtavendute':
+		$res = pg_query($conn, "SELECT * FROM giacenze JOIN ingredienti ON giacenze.id = ingredienti.id_giacenza WHERE ingredienti.id = $id;");
+		if (pg_num_rows($res) == 0) {
+			echo 0; break;
+		}
+		$row = pg_fetch_assoc($res);
+		if ($row['scorta_iniziale'] == 0) {
+			echo 0; break;
+		}
+		$data = explode(" ", $row['data_disponibilita'])[0];
+		$ora = explode(" ", $row['data_disponibilita'])[1];
+		echo pg_fetch_assoc(pg_query($conn, "SELECT COALESCE(SUM(righe_ingredienti.quantita), 0) as somma
+			FROM righe_ingredienti
+			JOIN righe_articoli ON righe_ingredienti.id_riga_articolo = righe_articoli.id
+			JOIN righe ON righe_articoli.id_riga = righe.id
+			JOIN ordini ON righe.id_ordine = ordini.id
+			WHERE righe_ingredienti.descrizionebreve = '" . $row['descrizionebreve'] . "' and ordini.data >= '$data' and ordini.ora >= '$ora';"))['somma'];
 	default:
 		break;
 }

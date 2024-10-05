@@ -30,7 +30,7 @@ function statristrette() {
 
 function ingredienti() {
 	$('#ingredienti').html('<div class="spinner-border"></div> Ricerca degli ingredienti...');
-	$.getJSON("php/ajaxcasse.php?a=ingredienti&minuti=" + $('#ingminuti').html() + "&" + infoturno())
+	$.getJSON("php/ajaxcasse.php?a=ultimevendite&minuti=" + $('#ingminuti').html() + "&" + infoturno())
 	.done(function(json) {
 		var out = '';
 		$('#ingredienti').html('');

@@ -58,7 +58,7 @@ function getComande(chiama = null) {
 		document.getElementById('tab0').innerHTML = '';
 		document.getElementById('tab1').innerHTML = '';
 		var target;
-		var delay = {tab0: 0, tab1: 0};
+		var delay = {tab0: (tabmostrata == 1 ? 0.5 : 0), tab1: (tabmostrata == 0 ? 0.5 : 0)};
 		sumordini = {tab0: 0, tab1: 0};
 		try {
 			$.each(json, function(i, res) {

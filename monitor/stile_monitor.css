@@ -1,0 +1,13 @@
+
+.rigaing {
+	width: 60px; 
+	animation: rigaIn 0.5s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease;
+	opacity: 1;
+}
+
+@keyframes rigaIn {
+	0% {transform: perspective(5cm) rotate3d(1, 0, 0, 180deg); opacity: 1;}
+	100% {transform: perspective(5cm) rotate3d(1, 0, 0, 0deg); opacity: 1;}
+}

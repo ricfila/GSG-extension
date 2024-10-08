@@ -20,8 +20,8 @@ $pagina = (str_ends_with($_SERVER['PHP_SELF'], 'index.php') ? 'pannello' : (str_
 $lido = str_ends_with($server, '1') ? 1 : 2;
 
 // MODIFICARE QUESTI IP SE DIVERSI DAI PROPRI:
-$ipserver1 = '192.168.1.101';
-$ipserver2 = '192.168.1.102';
+$ipserver1 = '192.168.1.201';
+$ipserver2 = '192.168.1.202';
 
 function menuturno() {
 	global $pagina, $lido;
@@ -36,9 +36,9 @@ function navdx() {
 		<li class="nav-item dropdown">
 			<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><i class="bi bi-link-45deg"></i> Collegamenti</a>
 			<ul class="dropdown-menu">
-				<li><a class="dropdown-item" id="linkpietanze" href="http://' . $server . '/" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Pietanze da servire</a></li>
 				<li><a class="dropdown-item" href="index.php"><i class="bi bi-star' . ($pagina == 'pannello' ? '-fill' : '') . '"></i> Pannello evasione comande</a></li>
 				<li><a class="dropdown-item" href="casse.php"><i class="bi bi-heart' . ($pagina == 'ausilio' ? '-fill' : '') . '"></i> Ausilio alle casse</a></li>
+				<li><a class="dropdown-item" href="http://' . $server . '/monitor/" target="_blank"><i class="bi bi-display"></i> Monitor cucina</a></li>
 				<li><a class="dropdown-item" href="associazioni.php"><i class="bi bi-geo-alt' . ($pagina == 'associazioni' ? '-fill' : '') . '"></i> Associazioni</a></li>
 				<li><hr class="dropdown-divider"></li>
 				<li><a class="dropdown-item" href="http://' . ($lido == 1 ? $ipserver2 : $ipserver1) . '/pannello/' . ($pagina == 'pannello' ? '' : 'casse.php') . '"><i class="bi bi-' . ($lido == 1 ? 2 : 1) . '-circle"></i> ' . ($pagina == 'pannello' ? 'Pannello' : 'Ausilio') . ' su Sagra0' . ($lido == 1 ? 2 : 1) . '</a></li>

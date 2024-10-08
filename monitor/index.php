@@ -8,6 +8,7 @@
 	<script src="../js/bootstrap-5.0.2/bootstrap.bundle.min.js"></script>
 	<script src="../js/jquery-3.6.0.min.js"></script>
 	<link rel="stylesheet" href="../css/stile.css" />
+	<link rel="stylesheet" href="stile_monitor.css" />
 	<link rel="icon" type="image/png" href="../pannello/media/display-fill.png" />
 	<title>Monitor cucina</title>
 	<?php
@@ -68,25 +69,30 @@
 			<?php
 		} else {
 			?>
-			
-			
-			<p id="err"></p>
-			<div id="corpo" class="mt-4"></div>
+			<p id="err" aclass="mb-0">&nbsp;</p>
+			<div id="corpo"></div>
 
 			<script>
 				function aggiorna() {
 					let pre = $('#corpo').html();
-					$('#corpo').html('<div class="spinner-border"></div> Caricamento in corso...');
+					$('#err').html('<div class="spinner-border spinner-border-sm"></div> Caricamento in corso...');
 
 					$.getJSON("ajax.php?a=ingredienti&settore=<?php echo $settore; ?>")
 					.done(function(json) {
-						$('#err').html('');
+						$('#err').html('&nbsp;');
 						try {
-							let out = '';
+							let out = '<div class="row">';
 							$.each(json, function(i, res) {
-								out += '<h4 class="mt-4">' + res.descrizione + ':&emsp;<span class="bg-' + (res.qta_attiva == 0 ? "dark" : (res.qta_attiva < 10 ? "success" : "danger")) + ' text-light py-1 px-3 rounded-3" style="width: 300px;">' + res.qta_attiva + '</span></h4>';
+								out += '<div class="col-12 col-md-6 mb-4">';
+								out += '<div class="row"><div class="col-auto">';
+								out += '<h4>' + res.descrizione + ':</h4>';
+								out += '</div><div class="col-auto">';
+								out += '<div class="bg-' + (res.qta_attiva == 0 ? "dark" : (res.qta_attiva < 10 ? "success" : "danger")) + ' text-center py-1 px-0 rounded-3 rigaing" style="animation-delay: ' + (i * 0.05) + 's;"><h4 class="text-light m-0">' + res.qta_attiva + '</h4></div>';
+								out += '</div></div>';
 								out += '<p>Ordinati: ' + (parseInt(res.qta_attiva) + parseInt(res.qta_evasa)) + ' - Evasi: ' + res.qta_evasa + '</p>';
+								out += '</div>';
 							});
+							out += '</div>';
 							$('#corpo').html(out);
 						} catch (err) {
 							$('#err').html('<span class="text-danger"><strong>Errore nell\'elaborazione della richiesta:</strong></span>' + json);

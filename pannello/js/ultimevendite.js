@@ -1,7 +1,7 @@
 
 $('.nav-pills a[data-bs-target="#tabultimevendite"]').on('show.bs.tab', function () {
 	statristrette();
-	ingredienti();
+	ultimevendite();
 });
 
 var minuti = getCookie('minuti');
@@ -28,7 +28,7 @@ function statristrette() {
 	});
 }
 
-function ingredienti() {
+function ultimevendite() {
 	$('#ingredienti').html('<div class="spinner-border"></div> Ricerca degli ingredienti...');
 	$.getJSON("php/ajaxcasse.php?a=ultimevendite&minuti=" + $('#ingminuti').html() + "&" + infoturno())
 	.done(function(json) {

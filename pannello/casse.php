@@ -99,7 +99,7 @@ if (isset($_COOKIE['logincasse'])) {
 							<div class="col-6">
 								Cerca tra gli ordini non evasi degli ultimi <strong id="ingminuti"></strong> minuti
 								<input type="range" id="rangeminuti" class="form-range" min="1" max="60" oninput="range(61 - $(this).val());"/>
-								<button class="btn btn-success btn-sm" onclick="ingredienti();"><i class="bi bi-arrow-clockwise"></i> Ricarica vendite</button>
+								<button class="btn btn-success btn-sm" onclick="ultimevendite();"><i class="bi bi-arrow-clockwise"></i> Ricarica vendite</button>
 							</div>
 							<div class="col-6">
 								<strong>Tempi di servizio di questo turno</strong>&emsp;<button class="btn btn-light btn-sm" onclick="statristrette();"><i class="bi bi-arrow-clockwise"></i></button><br>

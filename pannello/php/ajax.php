@@ -126,11 +126,11 @@ switch ($a) {
 		echo "]";
 		break;
 	case 'reportmodifiche':
-		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, modifiche.agente, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and ordini.cassa = '$cassa' ORDER BY ordini.tipo_pagamento;");
+		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, modifiche.agente, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and modifiche.agente <> modifiche.cassanuova and ordini.cassa = '$cassa' ORDER BY ordini.tipo_pagamento;");
 		echo "[\n";
 		$i = 0;
-		$j = 0;
 		while ($row = pg_fetch_assoc($res)) {
+			if ($i > 0) echo ",";
 			echo "\t{\n";
 			echo "\t\t\"tipo\": \"esterno\",\n";
 			echo "\t\t\"id\": " . $row['id'] . ",\n";
@@ -140,15 +140,13 @@ switch ($a) {
 			echo "\t\t\"differenza\": \"" . $row['differenza'] . "\",\n";
 			echo "\t\t\"righemodificate\": " . $row['righemodificate'] . ",\n";
 			echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\"\n";
-			echo "\t}" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			echo "\t}\n";
 			$i++;
-			$j++;
 		}
 		
-		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, ordini.cassa, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and modifiche.agente = '$cassa' ORDER BY ordini.tipo_pagamento;");
-		$i = 0;
+		$res = pg_query($conn, "SELECT ordini.id, ordini.progressivo, modifiche.ora, ordini.cassa, modifiche.differenza, modifiche.righemodificate, ordini.tipo_pagamento FROM modifiche join ordini on modifiche.id_ordine = ordini.id WHERE " . infoturno() . " and modifiche.differenza <> 0 and modifiche.agente <> modifiche.cassanuova and modifiche.agente = '$cassa' ORDER BY ordini.tipo_pagamento;");
 		while ($row = pg_fetch_assoc($res)) {
-			if ($j > 0) echo ",";
+			if ($i > 0) echo ",";
 			echo "\t{\n";
 			echo "\t\t\"tipo\": \"agente\",\n";
 			echo "\t\t\"id\": " . $row['id'] . ",\n";
@@ -158,7 +156,7 @@ switch ($a) {
 			echo "\t\t\"differenza\": \"" . $row['differenza'] . "\",\n";
 			echo "\t\t\"righemodificate\": " . $row['righemodificate'] . ",\n";
 			echo "\t\t\"tipo_pagamento\": \"" . $row['tipo_pagamento'] . "\"\n";
-			echo "\t}" . ($i < pg_num_rows($res) - 1 ? "," : "") . "\n";
+			echo "\t}\n";
 			$i++;
 		}
 		echo "]";
@@ -180,6 +178,64 @@ switch ($a) {
 			$i++;
 		}
 		echo "]";
+		break;
+	case 'reportarticoli':
+		if ($tipo == 'Articoli') { // Report degli articoli
+			$query = "SELECT righe.descrizionebase as descrizione, righe_articoli.desc_tipologia as tipologia,
+					ordini.data, pranzo_cena(ordini.ora) as turno, SUM(quantita) as qta
+				FROM righe
+				JOIN ordini ON righe.id_ordine = ordini.id
+				JOIN righe_articoli ON righe_articoli.id_riga = righe.id
+				JOIN articoli ON righe.descrizionebase = articoli.descrizione ";
+			if ($turno == 'true') {
+				$query .= "WHERE " . infoturno() . " ";
+			}
+			$query .= "GROUP BY ordini.data, turno, righe.descrizionebase, righe_articoli.desc_tipologia, articoli.posizione
+				ORDER BY articoli.posizione, ordini.data, turno DESC;";
+		} else { // Report degli ingredienti
+			$query = "SELECT righe_ingredienti.descrizione, dati_ingredienti.settore as tipologia,
+					ordini.data, pranzo_cena(ordini.ora) as turno,
+					CASE WHEN COALESCE(dati_ingredienti.divisore, 1) = 1 THEN SUM(righe_ingredienti.quantita) ELSE
+					ROUND(SUM(COALESCE(righe_ingredienti.quantita::decimal, 0) / dati_ingredienti.divisore), 2) END as qta
+				FROM righe_ingredienti
+				JOIN ingredienti ON righe_ingredienti.descrizionebreve = ingredienti.descrizionebreve
+				JOIN dati_ingredienti ON dati_ingredienti.id_ingrediente = ingredienti.id
+				JOIN righe_articoli ON righe_ingredienti.id_riga_articolo = righe_articoli.id
+				JOIN righe ON righe_articoli.id_riga = righe.id
+				JOIN ordini ON righe.id_ordine = ordini.id " .
+				($turno == 'true' ? "WHERE " . infoturno() . " " : "") .
+				"GROUP BY ordini.data, turno, righe_ingredienti.descrizione, dati_ingredienti.settore, righe_ingredienti.posizione, dati_ingredienti.divisore
+				ORDER BY dati_ingredienti.settore, righe_ingredienti.descrizione, ordini.data, turno DESC;";
+		}
+		$res = pg_query($conn, $query);
+		$out = array();
+		$turni = array();
+		while ($row = pg_fetch_assoc($res)) {
+			$t = $row['data'] . ',' . ($row['turno'] == 'pranzo' ? 0 : 1);
+			if (!in_array($t, $turni))
+				array_push($turni, $t);
+			$out[] = $row;
+		}
+
+		$outservizio = array();
+		if ($servizio == 'true') {
+			$query = array(
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'Ordini' as descrizione, 'Servizio' as tipologia, count(*) as qta FROM ordini" . ($turno == 'true' ? " WHERE " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;", // Ordini
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'Coperti' as descrizione, 'Servizio' as tipologia, sum(coperti) as qta FROM ordini" . ($turno == 'true' ? " WHERE " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;", // Coperti
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'Asporti' as descrizione, 'Servizio' as tipologia, count(*) as qta FROM ordini WHERE esportazione" . ($turno == 'true' ? " and " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;", // Asporti
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'Contanti' as descrizione, 'Servizio' as tipologia, sum(ordini.\"totalePagato\" - ordini.resto) as qta FROM ordini WHERE tipo_pagamento = 'CONTANTI'" . ($turno == 'true' ? " and " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;", // Contanti
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'POS' as descrizione, 'Servizio' as tipologia, sum(ordini.\"totalePagato\" - ordini.resto) as qta FROM ordini WHERE tipo_pagamento = 'POS'" . ($turno == 'true' ? " and " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;", // POS
+				"SELECT ordini.data, pranzo_cena(ordini.ora) as turno, 'Incasso totale' as descrizione, 'Servizio' as tipologia, sum(ordini.\"totalePagato\" - ordini.resto) as qta FROM ordini" . ($turno == 'true' ? " WHERE " . infoturno() : "") . " GROUP BY ordini.data, turno ORDER BY ordini.data, turno DESC;" // Totale incassi
+			);
+			foreach ($query as $q) {
+				$res = pg_query($conn, $q);
+				while ($row = pg_fetch_assoc($res)) {
+					$outservizio[] = $row;
+				}
+			}
+		}
+		echo json_encode(array("turni"=> $turni, "vendite"=> $out, "servizio"=> $outservizio));
+		break;
 	default:
 		break;
 }

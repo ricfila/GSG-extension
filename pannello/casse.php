@@ -62,7 +62,7 @@ if (isset($_COOKIE['logincasse'])) {
 							<li class="dropdown-header">Resoconti</li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabultimevendite" href="#"><i class="bi bi-cart-fill"></i> Ultime vendite</a></li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabstatistiche" href="#"><i class="bi bi-bar-chart-fill"></i> Statistiche sul servizio</a></li>
-								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabchiudicassa" href="#"><i class="bi bi-printer-fill"></i> Stampa rendiconto</a></li>
+								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabchiudicassa" href="#"><i class="bi bi-printer-fill"></i> Stampa rapporti</a></li>
 							<li class="dropdown-header">Gestione del sistema</li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabdatabase" href="#"><i class="bi bi-clipboard-check-fill"></i> Bonifica database</a></li>
 								<li class="nav-item w-100" style="margin-left: 15px;"><a class="linkcasse nav-link" data-bs-toggle="tab" data-bs-target="#tabingredienti" href="#"><i class="bi bi-list-task"></i> Anagrafica ingredienti</a></li>
@@ -133,7 +133,7 @@ if (isset($_COOKIE['logincasse'])) {
 				</div>
 				<div id="tabchiudicassa" class="tab-pane fade flex-column">
 					<div class="tab-content flex-grow-1 colonnadx" style="overflow-y: auto;">
-						<h4><i class="bi bi-printer"></i> Stampa rendiconto</h4><hr>
+						<h4><i class="bi bi-printer"></i> Stampa rapporti</h4><hr>
 						<div id="chiudicassabody"></div>
 					</div>
 				</div>

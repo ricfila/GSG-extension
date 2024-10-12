@@ -110,7 +110,7 @@ function impostaTurno(toast = true) {
 	$('#colonnasx').show();
 	var attuale = stessoTurno(data, new Date());
 	
-	document.getElementById("turno").innerHTML = (!attuale ? '<i class="bi bi-alarm"></i> ' : '<i class="bi bi-check2"></i> ') + giorni[data.getDay()] + " " + (data.getHours() < 17 ? "pranzo" : "cena");
+	document.getElementById("turno").innerHTML = (!attuale ? '<i class="bi bi-alarm"></i> ' : '<i class="bi bi-check2"></i> ') + giorni[data.getDay()] + " " + (pranzo(data) ? "pranzo" : "cena");
 	
 	// Imposta la data di inizio servizio
 	if (attuale || document.getElementById("impostacomunque").checked) {

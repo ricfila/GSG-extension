@@ -46,7 +46,7 @@ if (isset($_COOKIE['login'])) {
 							<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><i class="bi bi-tools"></i> Strumenti</a>
 							<ul class="dropdown-menu">
 								<li><a class="dropdown-item nostart" href="#" onclick="statistiche();"><i class="bi bi-bar-chart"></i> Statistiche</a></li>
-								<li><a class="dropdown-item nostart" href="#" onclick="chiudiCassaModal();"><i class="bi bi-printer"></i> Stampa rendiconto</a></li>
+								<li><a class="dropdown-item nostart" href="#" onclick="chiudiCassaModal();"><i class="bi bi-printer"></i> Stampa rapporti</a></li>
 								<li><hr class="dropdown-divider"></li>
 								<li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalbonifica"><i class="bi bi-clipboard-check"></i> Bonifica database</a></li>
 								<!--li><a class="dropdown-item" href="#" data-bs-toggle="offcanvas" data-bs-target="#modalmonitor"><i class="bi bi-display"></i> Monitoraggio</a></li-->

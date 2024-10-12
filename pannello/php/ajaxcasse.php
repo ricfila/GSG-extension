@@ -81,6 +81,7 @@ switch ($a) {
 			}
 		}
 		
+		// Riga ordine (comprendente di informazioni aggiuntive)
 		$res = pg_query($conn, "select * from ordini where id = $id;");
 		if (pg_num_rows($res) != 1) {
 			echo 'Ordine inesistente';
@@ -130,7 +131,7 @@ switch ($a) {
 		echo "\t}";
 		
 		// Righe articoli
-		$res = pg_query($conn, "select * from righe join righe_articoli on righe.id = righe_articoli.id_riga where id_ordine = $id and type = 'riga_articolo' order by righe.id;");
+		$res = pg_query($conn, "SELECT * FROM righe JOIN righe_articoli ON righe.id = righe_articoli.id_riga WHERE id_ordine = $id AND type = 'riga_articolo' ORDER BY righe.id;");
 		while ($row = pg_fetch_assoc($res)) {
 			echo ",\n";
 			echo "\t{\n";
@@ -158,6 +159,14 @@ switch ($a) {
 		}
 		echo "\n";
 		echo "]";
+		break;
+	case 'articoli':
+		$res = pg_query($conn, "SELECT articoli.id, articoli.descrizione, articoli.descrizionebreve, articoli.sfondo, articoli.prezzo, articoli.posizione, tipologie.descrizione as desc_tipologia, tipologie.posizione as pos_tipologia FROM articoli JOIN tipologie ON articoli.id_tipologia = tipologie.id WHERE tipologie.visibile ORDER BY tipologie.posizione, articoli.posizione;");
+		$out = array();
+		while ($row = pg_fetch_assoc($res)) {
+			$out[] = $row;
+		}
+		echo json_encode($out);
 		break;
 	case 'salvaordine':
 		if (!pg_query($conn, "BEGIN")) {

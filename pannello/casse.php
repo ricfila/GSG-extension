@@ -113,12 +113,12 @@ if (isset($_COOKIE['logincasse'])) {
 	<?php
 	include "php/toast.php";
 	include "php/menuturno.php";
+	include "php/strumenti/modificaordine.php";
 	include "php/strumenti/statistiche.php";
 	include "php/strumenti/chiudicassa.php";
 	include "php/strumenti/bonifica.php";
 	include "php/strumenti/ingredienti.php";
 	?>
-	<script src="js/modificaordine.js"></script>
 	<script src="js/ordinirecenti.js"></script>
 	<script src="js/ultimevendite.js"></script>
 				<div id="tabstatistiche" class="tab-pane fade flex-column">

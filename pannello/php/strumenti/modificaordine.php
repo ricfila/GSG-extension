@@ -3,13 +3,12 @@
 	<div class="modal-dialog modal-lg" role="document">
 		<div class="modal-content">
 			<div class="modal-header">
-				<h5 class="modal-title">Stampa rapporti</h5>
+				<h5 class="modal-title">Aggiungi articoli</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
 					<span aria-hidden="true"></span>
 				</button>
 			</div>
-			<div class="modal-body" id="modalcassebody" style="text-align: center;">
-			</div>
+			<div class="modal-body" id="modalarticolibody"></div>
 		</div>
 	</div>
 </div>
@@ -20,6 +19,7 @@ $('.nav-pills a[data-bs-target="#tabmodificaordine"]').on('show.bs.tab', functio
 	$('#modificaordine').html('Seleziona un ordine.');
 	$('#numordine').val('');
 });
+var modarticoli = new bootstrap.Modal(document.getElementById('modalarticoli'));
 
 var totalevecchio = 0;
 var totalenuovo = 0;
@@ -81,14 +81,7 @@ function apriordine() {
 							tipologia = res.tipologia;
 							out = '<div class="row mt-2"><div class="col-12" style="border-bottom: 2px solid #000;"><strong>' + tipologia + '</strong></div></div>';
 						}
-						out += '<div class="row d-flex align-items-center rigacomanda' + (res.note != '' ? ' riganote' : '') + '" id="' + res.id + '"><div class="col-2 p-0"><div class="row d-flex align-items-center">';
-						out += '<div class="col" style="padding-right: 0px;"><button class="btn btn-sm btn-danger" onclick="cambiaqta(' + res.id + ', -1);"><i class="bi bi-dash-lg"></i></button></div>';
-						out += '<div class="col text-center p-0"><span id="tagqtaoriginale' + res.id + '" class="d-none"><del id="originale' + res.id + '">' + res.quantita + '</del><br></span><strong id="quantita' + res.id + '">' + res.quantita + '</strong><span class="d-none" id="unitario' + res.id + '">' + res.prezzo_unitario + '</span><span class="d-none" id="poriginale' + res.id + '">' + (res.prezzo_unitario * res.quantita) + '</span></div>';
-						out += '<div class="col" style="padding-left: 0px; text-align: right;"><button class="btn btn-sm btn-success" onclick="cambiaqta(' + res.id + ', 1);"><i class="bi bi-plus-lg"></i></button></div></div>';
-						out += '</div><div class="col-8">' + res.descrizione;
-						out += '<span id="tagaddnote' + res.id + '"' + (res.note != '' ? ' class="d-none"' : '') + '>&emsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagaddnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').addClass(\'riganote\');"><i class="bi bi-plus-lg"></i> Note</button></span>';
-						out += '<span id="tagnote' + res.id + '"' + (res.note == '' ? ' class="d-none"' : '') + '><br>→&nbsp;<input class="form-control form-control-sm d-inline" type="text" id="note' + res.id + '" maxlength="254" style="width: 300px;" value="' + res.note + '" />&nbsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagaddnote' + res.id + '\').removeClass(\'d-none\'); $(\'#tagnote' + res.id + '\').addClass(\'d-none\'); $(\'#' + res.id + '\').removeClass(\'riganote\').addClass(\'toglinote\');;"><i class="bi bi-x-lg"></i></button></span>' + '</div>';
-						out += '<div class="col-2" style="text-align: right;" id="prezzo' + res.id + '">' + prezzo(res.prezzo_unitario * res.quantita) + '</div></div>';
+						out += riga_articolo(res.id, res.descrizione, res.quantita, res.prezzo_unitario, res.note);
 						totale += res.prezzo_unitario * res.quantita;
 					} else {
 						out += rigaSconto(res);
@@ -104,8 +97,9 @@ function apriordine() {
 				$('#modificaordine').append('<br>L\'ordine richiesto non ha alcuna riga.');
 			} else {
 				// Aggiunta di righe
-				out = '<div id="altrerighe"></div>';
-				out += '<br><button class="btn btn-primary" onclick="aggiungiArticolo();"><i class="bi bi-plus-lg"></i> Aggiungi articolo</button><br>';
+				out = '<div class="row mt-2 d-none" id="headaltrerighe"><div class="col-12" style="border-bottom: 2px solid #000;"><strong>Nuovi articoli</strong></div></div>';
+				out += '<div id="altrerighe"></div>';
+				out += '<br><button class="btn btn-primary" onclick="modaggiungiArticolo();"><i class="bi bi-plus-lg"></i> Aggiungi articolo</button><br>';
 
 				// Aggiunta di sconti
 				out += '<div id="altrisconti"></div>';
@@ -121,7 +115,7 @@ function apriordine() {
 				totalevecchio = totale;
 				totalenuovo = totale;
 			}
-			$('#modificaordine').append('<br><button class="btn btn-lg btn-success" onclick="$(\'#sicuro\').removeClass(\'d-none\');"><i class="bi bi-save"></i>&emsp;Salva</button>&emsp;<span id="sicuro" class="d-none">Sei sicuro?&nbsp;<button class="btn btn-success" onclick="salvaordine();">Salva</button>&nbsp;<button class="btn btn-danger" onclick="$(\'#sicuro\').addClass(\'d-none\');">Annulla</button></span><br><br>');
+			$('#modificaordine').append('<br><button class="btn btn-lg btn-success" onclick="$(\'#sicuro\').removeClass(\'d-none\');"><i class="bi bi-save"></i>&emsp;SALVA</button>&emsp;<span id="sicuro" class="d-none">Sei sicuro?&nbsp;<button class="btn btn-success" onclick="salvaordine();">Salva</button>&nbsp;<button class="btn btn-danger" onclick="$(\'#sicuro\').addClass(\'d-none\');">Annulla</button></span><br><br>');
 		} catch (err) {
 			$('#modificaordine').html('<span class="text-danger"><strong>Errore durante l\'analisi della risposta:</strong></span> ' + json);
 			if (!($('#buttonupdatemonitor').hasClass('disabled')))
@@ -133,6 +127,29 @@ function apriordine() {
 		if (!($('#buttonupdatemonitor').hasClass('disabled')))
 			updateModalMonitor();
 	});
+}
+
+function riga_articolo(id, descrizione, quantita, prezzo_unitario, note) {
+	let out = '';
+	out += '<div class="row d-flex align-items-center rigacomanda' + (note != '' ? ' riganote' : '') + '" id="' + id + '"><div class="col-2 p-0"><div class="row d-flex align-items-center">';
+
+	// Decremento
+	out += '<div class="col" style="padding-right: 0px;"><button class="btn btn-sm btn-danger" onclick="cambiaqta(' + id + ', -1);"><i class="bi bi-dash-lg"></i></button></div>';
+
+	// Quantità
+	out += '<div class="col text-center p-0">';
+	out += '<span id="tagqtaoriginale' + id + '" class="d-none"><del id="originale' + id + '">' + quantita + '</del><br></span>';
+	out += '<strong id="quantita' + id + '">' + quantita + '</strong>';
+	out += '<span class="d-none" id="unitario' + id + '">' + prezzo_unitario + '</span><span class="d-none" id="poriginale' + id + '">' + (prezzo_unitario * quantita) + '</span></div>';
+
+	// Aumento
+	out += '<div class="col" style="padding-left: 0px; text-align: right;"><button class="btn btn-sm btn-success" onclick="cambiaqta(' + id + ', 1);"><i class="bi bi-plus-lg"></i></button></div></div>';
+
+	out += '</div><div class="col-8">' + descrizione;
+	out += '<span id="tagaddnote' + id + '"' + (note != '' ? ' class="d-none"' : '') + '>&emsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagnote' + id + '\').removeClass(\'d-none\'); $(\'#tagaddnote' + id + '\').addClass(\'d-none\'); $(\'#' + id + '\').addClass(\'riganote\');"><i class="bi bi-plus-lg"></i> Note</button></span>';
+	out += '<span id="tagnote' + id + '"' + (note == '' ? ' class="d-none"' : '') + '><br>→&nbsp;<input class="form-control form-control-sm d-inline" type="text" id="note' + id + '" maxlength="254" style="width: 300px;" value="' + note + '" />&nbsp;<button class="btn btn-sm btn-light" onclick="$(\'#tagaddnote' + id + '\').removeClass(\'d-none\'); $(\'#tagnote' + id + '\').addClass(\'d-none\'); $(\'#' + id + '\').removeClass(\'riganote\').addClass(\'toglinote\');;"><i class="bi bi-x-lg"></i></button></span>' + '</div>';
+	out += '<div class="col-2" style="text-align: right;" id="prezzo' + id + '">' + prezzo(prezzo_unitario * quantita) + '</div></div>';
+	return out;
 }
 
 function prezzo(p) {
@@ -210,16 +227,46 @@ function aggiungiSconto(id) {
 	aggiornatotale();
 }
 
-function aggiungiArticolo() {
+var lista_articoli = null;
+function modaggiungiArticolo() {
 	$.getJSON("php/ajaxcasse.php?a=articoli")
 	.done(function(json) {
-		
+		let out = '<p><strong class="text-danger">Attenzione!</strong> Controllare manualmente se ci sono problemi di giacenza dei singoli articoli.</p>';
+		let tipologia = null;
+		lista_articoli = json;
+		$.each(json, function(i, res) {
+			if (res.desc_tipologia != tipologia) {
+				out += '<h5>' + res.desc_tipologia + '</h5><hr class="mt-0" />';
+				tipologia = res.desc_tipologia;
+			}
+			out += '<button class="btn p-3 me-2 mb-2" style="background-color: #' + convertiColore(res.sfondo) + '; border: 1px solid black;" onclick="aggiungiArticolo(' + i + ');">' + res.descrizionebreve + '</button>';
+		});
+		$('#modalarticolibody').html(out);
+		modarticoli.show();
 	})
 	.fail(function(jqxhr, textStatus, error) {
 		$('#modificaordine').html('<span class="text-danger"><strong>Errore durante la richiesta:</strong> </span>' + jqxhr.responseText);
 		if (!($('#buttonupdatemonitor').hasClass('disabled')))
 			updateModalMonitor();
 	});
+}
+
+function convertiColore(str) {
+	//return (parseInt(str).toString(16)).padStart(6, '0');
+    let hexColor = parseInt(str).toString(16);
+    while (hexColor.length < 6) {
+        hexColor = '0' + hexColor;
+    }
+    return hexColor;
+}
+
+function aggiungiArticolo(index) {
+	modarticoli.hide();
+	let id_riga = (-1) * lista_articoli[index].id;
+	let out = riga_articolo(id_riga, lista_articoli[index].descrizione, 0, lista_articoli[index].prezzo, '');
+	$('#headaltrerighe').removeClass('d-none');
+	$('#altrerighe').append(out);
+	cambiaqta(id_riga, +1);
 }
 
 function aggiornatotale() {

@@ -131,7 +131,7 @@ switch ($a) {
 		echo "\t}";
 		
 		// Righe articoli
-		$res = pg_query($conn, "SELECT * FROM righe JOIN righe_articoli ON righe.id = righe_articoli.id_riga WHERE id_ordine = $id AND type = 'riga_articolo' ORDER BY righe.id;");
+		$res = pg_query($conn, "SELECT * FROM righe JOIN righe_articoli ON righe.id = righe_articoli.id_riga WHERE id_ordine = $id AND type = 'riga_articolo' ORDER BY righe_articoli.posizione;");
 		while ($row = pg_fetch_assoc($res)) {
 			echo ",\n";
 			echo "\t{\n";
@@ -176,15 +176,37 @@ switch ($a) {
 			if (isset($righe)) {
 				$righemod = count($righe);
 				foreach ($righe as $idriga => $qta) {
-					$idrigaarticolo = pg_fetch_assoc(pg_query($conn, "select id from righe_articoli where id_riga = $idriga;"))['id'];
-					if ($qta == 0) {
-						$ok = $ok && pg_query($conn, "delete from righe_ingredienti where id_riga_articolo = $idrigaarticolo;");
-						$ok = $ok && pg_query($conn, "delete from righe_articoli where id_riga = $idriga;");
-						$ok = $ok && pg_query($conn, "delete from righe where id = $idriga;");
-					} else {
-						$qtavecchia = pg_fetch_assoc(pg_query($conn, "select quantita from righe where id = $idriga;"))['quantita'];
-						$ok = $ok && pg_query($conn, "update righe_ingredienti set quantita = (righe_ingredienti.quantita * $qta / $qtavecchia) where id_riga_articolo = $idrigaarticolo;");
-						$ok = $ok && pg_query($conn, "update righe set quantita = $qta where id = $idriga;");
+					if ($idriga < 0) { // Aggiunta di nuova riga
+						$id_articolo = $idriga * (-1); // L'id inviato è l'id dell'articolo negato
+						$rowart = pg_fetch_assoc(pg_query($conn, "SELECT * FROM articoli WHERE id = $id_articolo;"));
+						$rowtip = pg_fetch_assoc(pg_query($conn, "SELECT * FROM tipologie WHERE id = " . $rowart['id_tipologia'] . ";"));
+
+						// Inserimento in righe
+						$id_riga = pg_fetch_assoc(pg_query($conn, "INSERT INTO righe (quantita, id_ordine, type, descrizione, descrizionebreve, descrizionebase, aggregato) VALUES ($qta, $id, 'riga_articolo', '" . $rowart['descrizione'] . "', '" . $rowart['descrizionebreve'] . "', '" . $rowart['descrizione'] . "', '" . $rowart['descrizione'] . "') RETURNING id;"))['id'];
+
+						// Inserimento in righe_articoli
+						$ok = $ok && pg_query($conn, "INSERT INTO righe_articoli (id, id_riga, prezzo, copia_cucina, copia_bar, copia_cliente, copia_pizzeria, copia_rosticceria, desc_tipologia, pos_tipologia, posizione, note) VALUES ($id_riga, $id_riga, " . $rowart['prezzo'] . ", " . ($rowart['copia_cucina'] == 't'?'true':'false') . ", " . ($rowart['copia_bar'] == 't'?'true':'false') . ", " . ($rowart['copia_cliente'] == 't'?'true':'false') . ", " . ($rowart['copia_pizzeria'] == 't'?'true':'false') . ", " . ($rowart['copia_rosticceria'] == 't'?'true':'false') . ", '" . $rowtip['descrizione'] . "', " . $rowtip['posizione'] . ", " . $rowart['posizione'] . ", null);");
+
+						// Inserimenti in righe_ingredienti
+						$res = pg_query($conn, "SELECT * FROM articoli_ingredienti WHERE id_articolo = $id_articolo and obbligatorio;");
+						while ($row = pg_fetch_assoc($res)) {
+							$res2 = pg_query($conn, "SELECT * FROM ingredienti WHERE id = " . $row['id_ingrediente'] . ";");
+							if (pg_num_rows($res2) == 1) {
+								$row2 = pg_fetch_assoc($res2);
+								$ok = $ok && pg_query($conn, "INSERT INTO righe_ingredienti(id_riga_articolo, descrizione, descrizionebreve, quantita, prezzo, posizione, visibile) VALUES ($id_riga, '" . $row2['descrizione'] . "', '" . $row2['descrizionebreve'] . "', " . ($qta * $row['quantita_massima']) . ", 0, null, null);");
+							}
+						}
+					} else { // Modifica di riga esistente
+						$idrigaarticolo = pg_fetch_assoc(pg_query($conn, "select id from righe_articoli where id_riga = $idriga;"))['id'];
+						if ($qta == 0) {
+							$ok = $ok && pg_query($conn, "delete from righe_ingredienti where id_riga_articolo = $idrigaarticolo;");
+							$ok = $ok && pg_query($conn, "delete from righe_articoli where id_riga = $idriga;");
+							$ok = $ok && pg_query($conn, "delete from righe where id = $idriga;");
+						} else {
+							$qtavecchia = pg_fetch_assoc(pg_query($conn, "select quantita from righe where id = $idriga;"))['quantita'];
+							$ok = $ok && pg_query($conn, "update righe_ingredienti set quantita = (righe_ingredienti.quantita * $qta / $qtavecchia) where id_riga_articolo = $idrigaarticolo;");
+							$ok = $ok && pg_query($conn, "update righe set quantita = $qta where id = $idriga;");
+						}
 					}
 				}
 			} else

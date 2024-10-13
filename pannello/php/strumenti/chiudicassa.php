@@ -277,7 +277,7 @@ function reportarticoli(tipo, turno) {
 					}
 					if (!turno) {
 						out += '<td class="p-1 border-1"><strong>';
-						if (descpagamenti.includes(res.descrizione))
+						if (descpagamenti.includes(articolo))
 							out += prezzo_cc(parseFloat(totale));
 						else
 							out += (''+(Math.round(totale*100)/100)).replace(".", ",");

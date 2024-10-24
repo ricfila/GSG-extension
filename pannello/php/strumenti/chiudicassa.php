@@ -268,7 +268,7 @@ function reportarticoli(tipo, turno) {
 
 		let vendite = (json.vendite).concat(json.servizio);
 		$.each(vendite, function(j, res) {
-			if (articolo != res.descrizione) {
+			if (articolo != res.descrizione || tipologia != res.tipologia) {
 				// Chiusura riga articolo precedente
 				if (articolo != null) {
 					while (i < turni.length) {

@@ -251,14 +251,17 @@ function reportarticoli(tipo, turno) {
 		let turni = json.turni;
 		turni.sort();
 		let headturni = '';
+		let headcsv = '';
 		turni.forEach(function(t) {
 			let d = new Date(t.substring(0, 10));
 			headturni += '<th class="p-1 border-1">' + giorni[d.getDay()].substring(0, 3) + ' ' + d.getDate() + (t.substring(11) == 0 ? ' <i class="bi bi-sun-fill"></i>' : ' <i class="bi bi-moon-fill"></i>') + '</th>';
+			headcsv += ',' + giorni[d.getDay()] + ' ' +  d.getDate() + (t.substring(11) == 0 ? ' pranzo' : ' cena');
 		});
 
+		let outcsv = '';
 		let out = headerHtml(tipo + ' venduti') + '<body>';
 		out += '<h3><i class="bi bi-graph-up-arrow"></i> ' + tipo + ' venduti - ' + (turno ? giorni[data.getDay()] + ' ' + data.getDate() + (pranzo(data) ? ' pranzo' : ' cena') : turni[0].substring(0, 4)) + '</h3>';
-		let headtable = '<table class="atable w-100 mb-3" style="font-size: 0.875rem;">';
+		let headtable = '<table class="w-100 mb-3" style="font-size: 0.875rem;">';
 		out += headtable;
 		let tipologia = null;
 		let articolo = null;
@@ -273,6 +276,7 @@ function reportarticoli(tipo, turno) {
 				if (articolo != null) {
 					while (i < turni.length) {
 						out += '<td class="p-1 border-1"></td>';
+						outcsv += ',';
 						i++;
 					}
 					if (!turno) {
@@ -282,8 +286,10 @@ function reportarticoli(tipo, turno) {
 						else
 							out += (''+(Math.round(totale*100)/100)).replace(".", ",");
 						out += '</strong></td>';
+						outcsv += ',' + (Math.round(totale*100)/100);
 					}
 					out += '</tr>';
+					outcsv += '\n';
 				}
 
 				if (tipologia != res.tipologia) {
@@ -291,17 +297,20 @@ function reportarticoli(tipo, turno) {
 					if (res.tipologia == 'Servizio')
 						out += '</table>' + headtable;
 					out += '<tbody style="page-break-inside: avoid;"><tr class="border-2 border-dark"><th class="p-1 border-1"><h5 class="my-0">' + res.tipologia + '</h5></th>' + headturni + (!turno ? '<th class="p-1 border-1"><strong>Totale</strong></th>' : '') + '</tr>';
+					outcsv += res.tipologia + headcsv + (!turno ? ',Totale' : '') + '\n';
 					tipologia = res.tipologia;
 				}
 
 				// Apertura riga nuovo articolo
 				out += '<tr><td class="p-1 border-1">' + res.descrizione + '</td>';
+				outcsv += res.descrizione.replaceAll(",", "");
 				articolo = res.descrizione;
 				i = 0;
 				totale = 0;
 			}
 			while (turni[i] != (res.data + ',' + (res.turno == 'pranzo' ? 0 : 1)) && (i < turni.length)) {
 				out += '<td class="p-1 border-1"></td>';
+				outcsv += ',';
 				i++;
 			}
 			out += '<td class="p-1 border-1">';
@@ -310,24 +319,30 @@ function reportarticoli(tipo, turno) {
 			else
 				out += (''+parseFloat(res.qta)).replace(".", ",");
 			out += '</td>';
+			outcsv += ',' + parseFloat(res.qta);
 			totale += parseFloat(res.qta);
 			i++;
 		});
 		// Chiusura riga ultimo articolo
 		while (i < turni.length) {
 			out += '<td class="p-1 border-1"></td>';
+			out += ',';
 			i++;
 		}
 		if (!turno) {
 			out += '<td class="p-1 border-1"><strong>';
+			out += ',';
 			if (descpagamenti.includes(articolo))
 				out += prezzo_cc(parseFloat(totale));
 			else
 				out += (''+(Math.round(totale*100)/100)).replace(".", ",");
 			out += '</strong></td></tr>';
+			outcsv += ',' + (Math.round(totale*100)/100);
 		}
+		outcsv += '\n';
 
 		out += '</table></body></html>';
+		console.log(outcsv);
 		apri_e_stampa(out);
 	})
 	.fail(function(jqxhr, textStatus, error) {
